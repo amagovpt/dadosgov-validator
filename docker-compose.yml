@@ -1,0 +1,49 @@
+version: "3.9"
+
+services:
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  flask:
+    build: .
+    command: python -m debugpy --listen 0.0.0.0:5678 --wait-for-client -m flask run --host=0.0.0.0 --port=5000 --no-debugger --no-reload
+    ports:
+      - "5000:5000"
+      - "5678:5678"
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - .:/app
+      - uploads:/app/uploads
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  celery_worker:
+    build: .
+    command: python -m debugpy --listen 0.0.0.0:5679 -m celery -A run.celery worker --loglevel=info
+    ports:
+      - "5679:5679"
+    env_file:
+      - .env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
+    volumes:
+      - .:/app
+      - uploads:/app/uploads
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  uploads:
