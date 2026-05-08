@@ -21,14 +21,31 @@ Additional keys depend on the rule type. Examples:
 """
 
 import pandas as pd
+import time
 from app.validators.rules import (
-    test_not_null
+    test_not_null,
+    test_unique_generic,
+    test_length_max,
+    test_length_min,
+    test_length_exact,
+    test_possible_values,
+    test_percentage_max_decimal_places,
+    test_domains_numeric,
+    test_one_to_one_columns
 )
 
 # Maps rule type strings to validator functions
-# ADD YOUR OWN RULES HERE as you port them from your existing project
+# ADD YOUR OWN RULES HERE as you port them from the existing project
 RULE_REGISTRY: dict = {
     'test_not_null': test_not_null,
+    'test_unique_generic': test_unique_generic,
+    'test_length_max': test_length_max,
+    'test_length_min': test_length_min,
+    'test_length_exact': test_length_exact,
+    'test_possible_values': test_possible_values,
+    'test_percentage_max_decimal_places': test_percentage_max_decimal_places,
+    'test_domains_numeric': test_domains_numeric,
+    'test_one_to_one_columns': test_one_to_one_columns,
 }
 
 
@@ -43,23 +60,24 @@ def run_rules(df: pd.DataFrame, rules: list) -> dict:
         "failed": 1,
         "results": [
             {"rule": {...}, "passed": True,  "failures": []},
-            {"rule": {...}, "passed": False, "failures": [{"row": 4, "value": -1}]},
+            {"rule": {...}, "passed": False, "failures": [
+                {"column": "NomeColuna", "message": "Lorem ipsum dolor sit", "row": 4, "value": -1},
+                {"column": "NomeColuna", "message": "Lorem ipsum dolor sit", "row": 7, "value": -4},
+                ...
+            ]},
             ...
         ]
     }
     """
+    start_time = time.time()
+
     results = []
 
     for rule in rules:
         rule_type = rule.get("type")
 
         if rule_type not in RULE_REGISTRY:
-            results.append({
-                "rule": rule,
-                "passed": False,
-                "error": f"Unknown rule type: '{rule_type}'. Available types: {list(RULE_REGISTRY.keys())}"
-            })
-            continue
+            raise ValueError(f"Unknown rule type: {rule_type}. Please add it to the RULE_REGISTRY.")
 
         validator_fn = RULE_REGISTRY[rule_type]
 
@@ -79,9 +97,12 @@ def run_rules(df: pd.DataFrame, rules: list) -> dict:
 
     passed_count = sum(1 for r in results if r.get("passed"))
 
+    end_time = time.time()
+
     return {
         "total_rules": len(rules),
         "passed": passed_count,
         "failed": len(rules) - passed_count,
         "results": results,
+        "execution_time_seconds": round(end_time - start_time, 2)
     }

@@ -1,11 +1,13 @@
-import os
-import pandas as pd
+import logging
+import time
+
 from app import celery
 from app.validators.engine import run_rules
+from app.utils import dataset_processing
 
 
-@celery.task(bind=True)
-def run_validation(self, file_path: str, rules: list) -> dict:
+@celery.task(name="validation_task.run_validation", max_retries=3, default_retry_delay=5)
+def run_validation(dataset_id: str, rules: list) -> dict:
     """
     Celery task that:
       1. Loads the Excel file into a DataFrame
@@ -14,31 +16,24 @@ def run_validation(self, file_path: str, rules: list) -> dict:
       4. Cleans up the uploaded file afterwards
 
     Args:
-        file_path: Absolute path to the saved Excel file
+        dataset_id: The ID of the dataset to validate
         rules:     List of rule dicts, e.g. [{"type": "not_null", "column": "Age"}]
 
     Returns:
         A report dict with overall pass/fail and per-rule results
     """
-    try:
-        # Load the dataset
-        if file_path.endswith(".csv"):
-            df = pd.read_csv(file_path)
-        elif file_path.endswith((".xlsx", ".xls")):
-            df = pd.read_excel(file_path)
-        else:
-            raise ValueError("Unsupported file format")
+    # Get the dataframe from the in-memory store using the dataset_id
+    logging.info(f"Starting validation for dataset: {dataset_id} with rules: {rules}")
 
-        # Run all rules through the validation engine
-        report = run_rules(df, rules)
+    start_time = time.time()
+    df = dataset_processing.get_dataset_from_store(dataset_id)
+    logging.info(f"Finished loading dataset {dataset_id} from store in {time.time() - start_time:.2f} seconds")
+    
+    # Run all rules through the validation engine
+    logging.info(f"Running validation rules for dataset: {dataset_id}")
+    start_time = time.time()
+    report = run_rules(df, rules)
+    logging.info(f"Finished validation for dataset {dataset_id} in {time.time() - start_time:.2f} seconds")
 
-        return report
+    return report
 
-    except Exception as exc:
-        # Retry up to 3 times with exponential backoff before marking as FAILURE
-        raise self.retry(exc=exc, countdown=5, max_retries=3)
-
-    finally:
-        # Always clean up the temp file, whether the task succeeded or failed
-        if os.path.exists(file_path):
-            os.remove(file_path)

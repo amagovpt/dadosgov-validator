@@ -1,0 +1,1139 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Validador de Datasets</title>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg:       #0d0f12;
+      --surface:  #13161b;
+      --border:   #23272e;
+      --border2:  #2e333c;
+      --text:     #c8cdd6;
+      --muted:    #565d6b;
+      --accent:   #a3e635;       /* lime */
+      --accent2:  #38bdf8;       /* sky */
+      --warn:     #fb923c;
+      --danger:   #f87171;
+      --pass:     #4ade80;
+      --mono:     'IBM Plex Mono', monospace;
+      --sans:     'IBM Plex Sans', sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 14px;
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ─────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 18px 32px;
+      border-bottom: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .logo-mark {
+      width: 32px; height: 32px;
+      background: var(--accent);
+      border-radius: 4px;
+      display: grid; place-items: center;
+      flex-shrink: 0;
+    }
+    .logo-mark svg { width: 18px; height: 18px; }
+    header h1 { font-family: var(--mono); font-size: 15px; font-weight: 600; color: #fff; letter-spacing: .02em; }
+    header span { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-left: auto; }
+
+    /* ── LAYOUT ─────────────────────────────────────────── */
+    .layout {
+      display: grid;
+      grid-template-columns: 360px 1fr;
+      gap: 0;
+      min-height: calc(100vh - 61px);
+    }
+
+    /* ── SIDEBAR ────────────────────────────────────────── */
+    aside {
+      border-right: 1px solid var(--border);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      overflow-y: auto;
+    }
+
+    .section-label {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .12em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    /* ── DROP ZONE ──────────────────────────────────────── */
+    .drop-zone {
+      border: 1.5px dashed var(--border2);
+      border-radius: 8px;
+      padding: 28px 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color .2s, background .2s;
+      position: relative;
+    }
+    .drop-zone:hover, .drop-zone.drag-over {
+      border-color: var(--accent);
+      background: rgba(163,230,53,.04);
+    }
+    .drop-zone input[type="file"] {
+      position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+    }
+    .drop-icon { font-size: 28px; margin-bottom: 8px; }
+    .drop-zone p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+    .drop-zone p strong { color: var(--text); }
+    .file-badge {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: rgba(163,230,53,.08);
+      border: 1px solid rgba(163,230,53,.25);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-family: var(--mono);
+      font-size: 12px;
+      color: var(--accent);
+      margin-top: 12px;
+      word-break: break-all;
+    }
+    .file-badge.show { display: flex; }
+
+    /* ── BASE URL ───────────────────────────────────────── */
+    .input-group { display: flex; flex-direction: column; gap: 6px; }
+    .input-group label { font-size: 12px; color: var(--muted); font-family: var(--mono); }
+    .input-group input, .input-group select, .input-group textarea {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 6px;
+      color: var(--text);
+      font-family: var(--mono);
+      font-size: 12px;
+      padding: 8px 10px;
+      outline: none;
+      width: 100%;
+      transition: border-color .15s;
+    }
+    .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
+      border-color: var(--accent2);
+    }
+    .input-group select option { background: #1c2028; }
+
+    /* ── RULES BUILDER ──────────────────────────────────── */
+    .rules-header {
+      display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;
+    }
+    .rules-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .rule-card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      padding: 12px;
+      position: relative;
+      animation: slideIn .15s ease;
+    }
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-6px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .rule-card .rule-type-badge {
+      font-family: var(--mono);
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--accent2);
+      letter-spacing: .06em;
+      margin-bottom: 8px;
+    }
+    .rule-card .rule-fields { display: flex; flex-direction: column; gap: 6px; }
+    .rule-card .delete-btn {
+      position: absolute; top: 8px; right: 8px;
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; font-size: 16px; line-height: 1;
+      padding: 2px 4px; border-radius: 4px;
+      transition: color .15s, background .15s;
+    }
+    .rule-card .delete-btn:hover { color: var(--danger); background: rgba(248,113,113,.1); }
+
+    /* ── ADD RULE FORM ───────────────────────────────────── */
+    .add-rule-panel {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      padding: 14px;
+    }
+    .add-rule-panel h4 { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 10px; }
+    .add-rule-panel .dynamic-fields { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+
+    /* ── BUTTONS ─────────────────────────────────────────── */
+    .btn {
+      font-family: var(--sans); font-weight: 500; font-size: 13px;
+      padding: 8px 16px; border-radius: 6px; border: none; cursor: pointer;
+      transition: opacity .15s, transform .1s;
+    }
+    .btn:active { transform: scale(.97); }
+    .btn-primary {
+      background: var(--accent); color: #0d0f12;
+    }
+    .btn-primary:hover { opacity: .88; }
+    .btn-primary:disabled { opacity: .35; cursor: not-allowed; }
+    .btn-ghost {
+      background: transparent; border: 1px solid var(--border2);
+      color: var(--text);
+    }
+    .btn-ghost:hover { border-color: var(--accent2); color: var(--accent2); }
+    .btn-sm { padding: 5px 11px; font-size: 12px; }
+
+    .submit-btn {
+      width: 100%;
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: .03em;
+    }
+
+    /* ── MAIN PANEL ─────────────────────────────────────── */
+    main {
+      display: flex;
+      flex-direction: column;
+      padding: 28px 32px;
+      gap: 24px;
+      overflow-y: auto;
+    }
+
+    /* ── STATUS CARD ─────────────────────────────────────── */
+    .status-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 24px;
+    }
+    .status-row {
+      display: flex; align-items: center; gap: 12px; margin-bottom: 12px;
+    }
+    .pulse {
+      width: 10px; height: 10px; border-radius: 50%;
+      background: var(--muted);
+      flex-shrink: 0;
+    }
+    .pulse.running { background: var(--warn); box-shadow: 0 0 0 0 rgba(251,146,60,.6); animation: pulse 1.2s infinite; }
+    .pulse.success { background: var(--pass); }
+    .pulse.failure { background: var(--danger); }
+    .pulse.idle    { background: var(--muted); }
+    @keyframes pulse {
+      0%   { box-shadow: 0 0 0 0 rgba(251,146,60,.6); }
+      70%  { box-shadow: 0 0 0 8px rgba(251,146,60,0); }
+      100% { box-shadow: 0 0 0 0 rgba(251,146,60,0); }
+    }
+    .status-text { font-family: var(--mono); font-size: 13px; font-weight: 500; }
+    .job-id { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+    /* ── SUMMARY PILLS ───────────────────────────────────── */
+    .summary-pills {
+      display: flex; gap: 10px; flex-wrap: wrap;
+    }
+    .pill {
+      display: flex; align-items: center; gap: 8px;
+      padding: 8px 16px;
+      border-radius: 100px;
+      font-family: var(--mono); font-size: 13px; font-weight: 600;
+    }
+    .pill-total { background: rgba(56,189,248,.1); color: var(--accent2); border: 1px solid rgba(56,189,248,.2); }
+    .pill-pass  { background: rgba(74,222,128,.1); color: var(--pass);    border: 1px solid rgba(74,222,128,.2); }
+    .pill-fail  { background: rgba(248,113,113,.1); color: var(--danger); border: 1px solid rgba(248,113,113,.2); }
+
+    /* ── RESULTS TABLE ───────────────────────────────────── */
+    .results-section { display: flex; flex-direction: column; gap: 12px; }
+
+    .rule-result {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      transition: border-color .2s;
+    }
+    .rule-result.passed  { border-left: 3px solid var(--pass); }
+    .rule-result.failed  { border-left: 3px solid var(--danger); }
+    .rule-result.errored { border-left: 3px solid var(--warn); }
+
+    .rule-result-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .rule-result-header:hover { background: rgba(255,255,255,.02); }
+
+    .status-dot {
+      width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+    }
+    .dot-pass    { background: var(--pass); }
+    .dot-fail    { background: var(--danger); }
+    .dot-warn    { background: var(--warn); }
+
+    .rule-info { flex: 1; min-width: 0; }
+    .rule-info .rule-name {
+      font-family: var(--mono); font-size: 12px; font-weight: 600;
+      color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .rule-info .rule-meta {
+      font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 2px;
+    }
+    .failure-count {
+      font-family: var(--mono); font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 100px;
+      background: rgba(248,113,113,.12);
+      color: var(--danger);
+      white-space: nowrap;
+    }
+    .failure-count.zero {
+      background: rgba(74,222,128,.1);
+      color: var(--pass);
+    }
+    .chevron {
+      color: var(--muted); font-size: 12px;
+      transition: transform .2s;
+    }
+    .rule-result.open .chevron { transform: rotate(90deg); }
+
+    .failure-table-wrap {
+      display: none;
+      padding: 0 16px 14px;
+    }
+    .rule-result.open .failure-table-wrap { display: block; }
+
+    table {
+      width: 100%; border-collapse: collapse;
+      font-family: var(--mono); font-size: 11px;
+    }
+    thead th {
+      text-align: left; padding: 6px 10px;
+      background: rgba(255,255,255,.03);
+      color: var(--muted);
+      border-bottom: 1px solid var(--border2);
+      letter-spacing: .06em; font-size: 10px; text-transform: uppercase;
+    }
+    tbody td {
+      padding: 6px 10px;
+      border-bottom: 1px solid rgba(255,255,255,.04);
+      vertical-align: top;
+      color: var(--text);
+      word-break: break-word;
+    }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: rgba(255,255,255,.02); }
+
+    /* ── EMPTY / IDLE STATE ─────────────────────────────── */
+    .idle-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 14px;
+      color: var(--muted);
+      text-align: center;
+    }
+    .idle-state .big-icon { font-size: 48px; opacity: .35; }
+    .idle-state p { font-size: 13px; line-height: 1.6; max-width: 340px; }
+    .idle-state code {
+      font-family: var(--mono); font-size: 11px;
+      background: var(--surface); border: 1px solid var(--border2);
+      padding: 2px 7px; border-radius: 4px;
+    }
+
+    /* ── TOAST ───────────────────────────────────────────── */
+    .toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+      background: #1e2330;
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      padding: 10px 18px;
+      font-family: var(--mono); font-size: 12px;
+      box-shadow: 0 8px 32px rgba(0,0,0,.5);
+      z-index: 999;
+      opacity: 0; pointer-events: none;
+      transition: opacity .2s;
+      white-space: nowrap;
+      max-width: 90vw;
+    }
+    .toast.show { opacity: 1; pointer-events: auto; }
+    .toast.error { border-color: var(--danger); color: var(--danger); }
+    .toast.info  { border-color: var(--accent2); color: var(--accent2); }
+
+    /* ── PREPROCESS STEP ─────────────────────────────────── */
+    .preprocess-block {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    .preprocess-status {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 6px;
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      font-family: var(--mono);
+      font-size: 12px;
+    }
+    .preprocess-status.show { display: flex; }
+    .preprocess-status.processing { border-color: rgba(251,146,60,.4); }
+    .preprocess-status.done       { border-color: rgba(74,222,128,.4); color: var(--pass); }
+    .preprocess-status.error      { border-color: rgba(248,113,113,.4); color: var(--danger); }
+
+    /* ── COLUMN SELECT ───────────────────────────────────── */
+    .column-select-wrap { display: flex; flex-direction: column; gap: 4px; }
+    .column-type-hint {
+      font-family: var(--mono); font-size: 10px; color: var(--muted);
+      padding: 2px 0;
+    }
+    select.col-select[multiple] {
+      height: auto;
+      min-height: 72px;
+      padding: 4px;
+    }
+    select.col-select[multiple] option {
+      padding: 4px 6px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    select.col-select[multiple] option:checked {
+      background: rgba(56,189,248,.18);
+      color: var(--accent2);
+    }
+    .multi-hint {
+      font-family: var(--mono); font-size: 10px; color: var(--muted);
+    }
+    .dataset-id-badge {
+      display: none;
+      align-items: center;
+      gap: 8px;
+      background: rgba(74,222,128,.07);
+      border: 1px solid rgba(74,222,128,.2);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-family: var(--mono);
+      font-size: 10px;
+      color: var(--pass);
+      word-break: break-all;
+      line-height: 1.5;
+    }
+    .dataset-id-badge.show { display: flex; }
+    .dataset-id-badge strong { color: var(--muted); font-weight: 500; display: block; margin-bottom: 2px; }
+    .btn-preprocess {
+      width: 100%;
+      background: transparent;
+      border: 1px solid var(--border2);
+      color: var(--accent2);
+      font-family: var(--sans);
+      font-weight: 500;
+      font-size: 13px;
+      padding: 9px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: border-color .15s, background .15s, opacity .15s;
+      letter-spacing: .02em;
+    }
+    .btn-preprocess:hover:not(:disabled) { border-color: var(--accent2); background: rgba(56,189,248,.05); }
+    .btn-preprocess:disabled { opacity: .35; cursor: not-allowed; }
+    .btn-preprocess:active:not(:disabled) { transform: scale(.97); }
+
+    /* ── RULE DESCRIPTION ────────────────────────────────── */
+    .rule-description {
+      font-size: 12px;
+      color: var(--muted);
+      line-height: 1.5;
+      padding: 8px 10px;
+      border-left: 2px solid var(--border2);
+      margin-top: 4px;
+      display: none;
+    }
+    .rule-description.visible { display: block; }
+
+
+    /* ── SCROLLBAR ───────────────────────────────────────── */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+    /* ── RESPONSIVE ─────────────────────────────────────── */
+    @media (max-width: 800px) {
+      .layout { grid-template-columns: 1fr; }
+      aside { border-right: none; border-bottom: 1px solid var(--border); }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-mark">
+    <svg viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="1" y="4" width="16" height="2" rx="1" fill="#0d0f12"/>
+      <rect x="1" y="8" width="10" height="2" rx="1" fill="#0d0f12"/>
+      <rect x="1" y="12" width="13" height="2" rx="1" fill="#0d0f12"/>
+      <circle cx="15" cy="14" r="2.5" fill="#0d0f12" stroke="#0d0f12" stroke-width=".5"/>
+      <path d="M13.5 14l1 1 2-2" stroke="#a3e635" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+    </svg>
+  </div>
+  <h1>Validador de Datasets</h1>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+    <label style="font-family:var(--mono);font-size:10px;color:var(--muted);white-space:nowrap;">URL Base</label>
+    <input type="text" id="baseUrl" value="http://localhost:5000/api"
+           placeholder="http://localhost:5000/api"
+           style="background:var(--bg);border:1px solid var(--border2);border-radius:5px;color:var(--text);
+                  font-family:var(--mono);font-size:11px;padding:5px 9px;outline:none;width:220px;" />
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- ── SIDEBAR ─────────────────────────────────────── -->
+  <aside>
+
+    <!-- File Upload -->
+    <div>
+      <div class="section-label">1 · Ficheiro</div>
+      <div class="drop-zone" id="dropZone">
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+        <div class="drop-icon">📂</div>
+        <p><strong>Arraste o ficheiro aqui</strong><br/>ou clique para selecionar<br/><small>.xlsx · .xls · .csv</small></p>
+      </div>
+      <div class="file-badge" id="fileBadge">
+        <span>📄</span>
+        <span id="fileNameDisplay"></span>
+      </div>
+    </div>
+
+
+    <!-- Preprocess -->
+    <div>
+      <div class="section-label">2 · Pré-processamento</div>
+      <div class="preprocess-block">
+        <button class="btn-preprocess" id="preprocessBtn" onclick="preprocessDataset()" disabled>
+          ⚙ Pré-processar Ficheiro
+        </button>
+        <div class="preprocess-status" id="preprocessStatus">
+          <div class="pulse running" id="preprocessPulse" style="flex-shrink:0;"></div>
+          <span id="preprocessStatusText">A processar…</span>
+        </div>
+        <div class="dataset-id-badge" id="datasetIdBadge">
+          <div>
+            <strong>dataset_id</strong>
+            <span id="datasetIdDisplay"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Rules -->
+    <div style="flex:1; min-height:0; display:flex; flex-direction:column; gap:0;">
+      <div class="section-label">3 · Regras de Validação</div>
+
+      <!-- Add rule panel -->
+      <div class="add-rule-panel" style="margin-bottom:12px;">
+        <h4>ADICIONAR REGRA</h4>
+        <div class="input-group">
+          <label>Tipo de regra</label>
+          <select id="newRuleType" onchange="renderDynamicFields()">
+            <option value="">— selecione —</option>
+          </select>
+        </div>
+        <div class="rule-description" id="ruleDescription"></div>
+        <div class="dynamic-fields" id="dynamicFields"></div>
+        <div style="margin-top:10px;">
+          <button class="btn btn-ghost btn-sm" onclick="addRule()" style="width:100%;">+ Adicionar Regra</button>
+        </div>
+      </div>
+
+      <!-- Rules list -->
+      <div id="rulesList" class="rules-list"></div>
+    </div>
+
+    <!-- Submit -->
+    <button class="btn btn-primary submit-btn" id="submitBtn" onclick="submitValidation()" disabled>
+      ▶ Executar Validação
+    </button>
+
+  </aside>
+
+  <!-- ── MAIN ───────────────────────────────────────── -->
+  <main id="mainPanel">
+    <div class="idle-state" id="idleState">
+      <div class="big-icon">🔬</div>
+      <p>Carregue um ficheiro, pré-processe-o,<br/>defina as regras e clique em <strong>Executar Validação</strong>.</p>
+      <p style="font-size:12px;">Os resultados aparecerão aqui. O polling usa<br/><code>GET /api/results/{job_id}</code>.</p>
+    </div>
+  </main>
+
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────
+let rules          = [];
+let pollTimer      = null;
+let preprocessPollTimer = null;
+let selectedFile   = null;
+let datasetId      = null;
+let datasetColumns = [];   // [{ name, type }] populated after preprocessing
+let RULE_SCHEMA = {};
+
+// ── RULE SCHEMA ───────────────────────────────────────────
+async function fetchAvailableRules() {
+  const baseUrl = document.getElementById('baseUrl').value.replace(/\/$/, '');
+  const select  = document.getElementById('newRuleType');
+
+  try {
+    const res  = await fetch(`${baseUrl}/available_rules`);
+    const data = await res.json();
+
+    if (!res.ok) throw new Error(data.error || 'Erro ao obter regras.');
+
+    window.availableRules = data.rules || [];
+
+    select.innerHTML = '<option value="">— selecione —</option>';
+    window.availableRules.forEach(rule => {
+      const opt = document.createElement('option');
+      opt.value       = rule.id;
+      opt.textContent = rule.display_name;
+      select.appendChild(opt);
+    });
+
+  } catch (err) {
+    console.error(err);
+    showToast('Não foi possível carregar as regras. Verifique o backend.', 'error');
+  }
+}
+
+// Auto-fetch on page load
+document.addEventListener('DOMContentLoaded', fetchAvailableRules);
+
+// ── DRAG & DROP ───────────────────────────────────────────
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+dropZone.addEventListener('dragover',  e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('drag-over');
+  const f = e.dataTransfer.files[0];
+  if (f) setFile(f);
+});
+fileInput.addEventListener('change', () => {
+  if (fileInput.files[0]) setFile(fileInput.files[0]);
+});
+
+function setFile(f) {
+  const allowed = ['xlsx','xls','csv'];
+  const ext = f.name.split('.').pop().toLowerCase();
+  if (!allowed.includes(ext)) { showToast('Apenas ficheiros .xlsx, .xls ou .csv são aceites.', 'error'); return; }
+  selectedFile = f;
+  document.getElementById('fileNameDisplay').textContent = f.name;
+  document.getElementById('fileBadge').classList.add('show');
+
+  // Reset preprocessing state whenever a new file is selected
+  datasetId = null;
+  window.datasetColumns = null;
+  if (preprocessPollTimer) { clearInterval(preprocessPollTimer); preprocessPollTimer = null; }
+  document.getElementById('preprocessBtn').style.display = '';
+  document.getElementById('preprocessBtn').disabled = false;
+  document.getElementById('preprocessBtn').disabled = false;
+  document.getElementById('preprocessStatus').className = 'preprocess-status';
+  document.getElementById('datasetIdBadge').className = 'dataset-id-badge';
+  document.getElementById('submitBtn').disabled = true;
+}
+
+// ── DYNAMIC FIELDS ────────────────────────────────────────
+function isColumnField(key) {
+  // Matches: column, column1, column2, columns, etc.
+  return key === 'column' || key === 'columns' || /^column\d+$/.test(key);
+}
+
+function buildColumnOptions(includeEmpty = true) {
+  const cols = window.datasetColumns; // { colName: { display_name, dtype_raw } } or null
+  if (!cols || Object.keys(cols).length === 0) {
+    return '<option value="" disabled selected>— pré-processe o ficheiro primeiro —</option>';
+  }
+  const empty = includeEmpty ? '<option value="">— selecione a coluna —</option>' : '';
+  return empty + Object.entries(cols)
+    .map(([col, info]) => `<option value="${col}">${col} (${info.display_name})</option>`)
+    .join('');
+}
+
+function renderDynamicFields() {
+  const type = document.getElementById('newRuleType').value;
+  const wrap = document.getElementById('dynamicFields');
+  const desc = document.getElementById('ruleDescription');
+
+  wrap.innerHTML = '';
+  desc.textContent = '';
+  desc.classList.remove('visible');
+
+  const rule = (window.availableRules || []).find(r => r.id === type);
+  if (!rule) return;
+
+  desc.textContent = rule.description;
+  desc.classList.add('visible');
+
+  Object.entries(rule.parameters).forEach(([key, param]) => {
+    const div = document.createElement('div');
+    div.className = 'input-group column-select-wrap';
+
+    if (isColumnField(key)) {
+      const isMulti = param.type === 'array';
+      const cols = window.datasetColumns;
+      const hasColumns = cols && Object.keys(cols).length > 0;
+
+      if (isMulti) {
+        // Multi-select for array-of-columns fields (e.g. "columns")
+        const opts = hasColumns
+          ? Object.entries(cols).map(([col, info]) =>
+              `<option value="${col}" title="${info.dtype_raw}">${col} (${info.display_name})</option>`).join('')
+          : '<option value="" disabled>— pré-processe o ficheiro primeiro —</option>';
+
+        div.innerHTML = `
+          <label>${key}</label>
+          <select id="field_${key}" class="col-select" multiple data-col-multi="true" ${!hasColumns ? 'disabled' : ''}>
+            ${opts}
+          </select>
+          <span class="multi-hint">Ctrl/Cmd + clique para selecionar várias colunas</span>
+        `;
+      } else {
+        // Single-select for singular column fields (column, column1, column2, …)
+        const typeHintId = `hint_${key}`;
+        div.innerHTML = `
+          <label>${key}</label>
+          <select id="field_${key}" class="col-select" data-col-single="true"
+                  onchange="updateColumnTypeHint('${key}', '${typeHintId}')">
+            ${buildColumnOptions(true)}
+          </select>
+          <span class="column-type-hint" id="${typeHintId}"></span>
+        `;
+      }
+    } else {
+      // Regular text / number input
+      const inputType = param.type === 'integer' || param.type === 'number' ? 'number' : 'text';
+      div.innerHTML = `
+        <label>${key}</label>
+        <input type="${inputType}" id="field_${key}" placeholder="${param.description}">
+      `;
+    }
+
+    wrap.appendChild(div);
+  });
+}
+
+function updateColumnTypeHint(key, hintId) {
+  const sel  = document.getElementById('field_' + key);
+  const hint = document.getElementById(hintId);
+  if (!sel || !hint) return;
+  const cols = window.datasetColumns || {};
+  const info = cols[sel.value];
+  hint.textContent = info ? `Tipo: ${info.display_name}` : '';
+}
+
+// ── ADD RULE ──────────────────────────────────────────────
+function addRule() {
+  const type = document.getElementById('newRuleType').value;
+  if (!type) { showToast('Por favor selecione um tipo de regra.', 'error'); return; }
+
+  const ruleDef = (window.availableRules || []).find(r => r.id === type);
+  if (!ruleDef) { showToast('Regras não carregadas. Clique em "↺ Buscar" primeiro.', 'error'); return; }
+
+  const rule = { type };
+  const params = ruleDef.parameters || {};
+
+  for (const [key, param] of Object.entries(params)) {
+    const el  = document.getElementById('field_' + key);
+    const isReq   = param.required;
+
+    // ── Column multi-select (array of columns) ──────────────
+    if (el && el.dataset.colMulti) {
+      const selected = Array.from(el.selectedOptions).map(o => o.value).filter(Boolean);
+      if (isReq && !selected.length) {
+        showToast(`Selecione pelo menos uma coluna para: ${key}`, 'error'); return;
+      }
+      if (selected.length) rule[key] = selected;
+      continue;
+    }
+
+    // ── Column single-select ────────────────────────────────
+    if (el && el.dataset.colSingle) {
+      const val = el.value.trim();
+      if (isReq && !val) {
+        showToast(`Selecione uma coluna para: ${key}`, 'error'); return;
+      }
+      if (val) rule[key] = val;
+      continue;
+    }
+
+    // ── Regular fields ──────────────────────────────────────
+    const val = el ? el.value.trim() : '';
+    const isArray = param.type === 'array';
+    const isInt   = param.type === 'integer';
+    const isNum   = param.type === 'number';
+
+    if (isArray) {
+      const arr = val.split(',').map(s => s.trim()).filter(Boolean);
+      if (isReq && !arr.length) {
+        showToast(`Preencha o campo: ${param.description || key}`, 'error'); return;
+      }
+      if (arr.length) rule[key] = arr;
+    } else if (isInt) {
+      if (isReq && val === '') {
+        showToast(`Preencha o campo: ${param.description || key}`, 'error'); return;
+      }
+      if (val !== '') rule[key] = parseInt(val, 10);
+    } else if (isNum) {
+      if (isReq && val === '') {
+        showToast(`Preencha o campo: ${param.description || key}`, 'error'); return;
+      }
+      if (val !== '') rule[key] = parseFloat(val);
+    } else {
+      if (isReq && !val) {
+        showToast(`Preencha o campo: ${param.description || key}`, 'error'); return;
+      }
+      if (val) rule[key] = val;
+    }
+  }
+
+  rules.push(rule);
+  renderRulesList();
+
+  // Reset form
+  document.getElementById('newRuleType').value = '';
+  document.getElementById('dynamicFields').innerHTML = '';
+  document.getElementById('ruleDescription').textContent = '';
+  document.getElementById('ruleDescription').classList.remove('visible');
+}
+
+// ── RENDER RULES LIST ─────────────────────────────────────
+function renderRulesList() {
+  const list = document.getElementById('rulesList');
+  list.innerHTML = '';
+  rules.forEach((rule, i) => {
+    const card = document.createElement('div');
+    card.className = 'rule-card';
+    const metaParts = Object.entries(rule)
+      .filter(([k]) => k !== 'type')
+      .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+      .join(' · ');
+
+    // Resolve display name from loaded rules if available
+    const rDef = (window.availableRules || []).find(r => r.id === rule.type);
+    const displayName = rDef ? rDef.display_name : rule.type;
+
+    card.innerHTML = `
+      <div class="rule-type-badge">${displayName}</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--muted);word-break:break-word;">${metaParts || '—'}</div>
+      <button class="delete-btn" onclick="removeRule(${i})" title="Remover">✕</button>
+    `;
+    list.appendChild(card);
+  });
+}
+
+function removeRule(i) {
+  rules.splice(i, 1);
+  renderRulesList();
+}
+
+// ── PREPROCESS ────────────────────────────────────────────
+async function preprocessDataset() {
+  if (!selectedFile) { showToast('Por favor carregue um ficheiro primeiro.', 'error'); return; }
+
+  const baseUrl = document.getElementById('baseUrl').value.replace(/\/$/, '');
+  const btn     = document.getElementById('preprocessBtn');
+  btn.disabled  = true;
+  btn.textContent = '⏳ A enviar…';
+
+  // Show processing status
+  const statusEl = document.getElementById('preprocessStatus');
+  statusEl.className = 'preprocess-status show processing';
+  document.getElementById('preprocessPulse').className = 'pulse running';
+  document.getElementById('preprocessStatusText').textContent = 'A enviar ficheiro…';
+  document.getElementById('datasetIdBadge').className = 'dataset-id-badge';
+  document.getElementById('submitBtn').disabled = true;
+  datasetId = null;
+
+  const fd = new FormData();
+  fd.append('file', selectedFile);
+
+  try {
+    const res  = await fetch(`${baseUrl}/preprocess`, { method: 'POST', body: fd });
+    const data = await res.json();
+
+    if (!res.ok) {
+      setPreprocessError(data.error || 'Falha ao pré-processar.');
+      return;
+    }
+
+    btn.textContent = '⚙ Pré-processar Ficheiro';
+    document.getElementById('preprocessStatusText').textContent = 'Na fila de espera…';
+    startPreprocessPolling(baseUrl, data.job_id, data.dataset_id);
+
+  } catch (err) {
+    setPreprocessError('Não foi possível contactar o backend.');
+  }
+}
+
+function startPreprocessPolling(baseUrl, jobId, pendingDatasetId) {
+  if (preprocessPollTimer) clearInterval(preprocessPollTimer);
+
+  preprocessPollTimer = setInterval(async () => {
+    try {
+      const res  = await fetch(`${baseUrl}/results/${jobId}`);
+      const data = await res.json();
+
+      if (data.status === 'started') {
+        document.getElementById('preprocessStatusText').textContent = 'A pré-processar…';
+      }
+
+      if (data.status === 'success') {
+        clearInterval(preprocessPollTimer);
+        preprocessPollTimer = null;
+        datasetId = pendingDatasetId;
+
+        // Store column map — new shape: { colName: { display_name, dtype_raw } }
+        window.datasetColumns = (data.result && data.result.presumed_column_types) || {};
+
+        const statusEl = document.getElementById('preprocessStatus');
+        statusEl.className = 'preprocess-status show done';
+        document.getElementById('preprocessPulse').className = 'pulse success';
+        document.getElementById('preprocessStatusText').textContent = 'Pré-processamento concluído';
+
+        document.getElementById('datasetIdDisplay').textContent = datasetId;
+        document.getElementById('datasetIdBadge').classList.add('show');
+
+        // Hide the button — preprocessing is a one-shot action per file
+        document.getElementById('preprocessBtn').style.display = 'none';
+        document.getElementById('submitBtn').disabled = false;
+
+        showToast('Ficheiro pré-processado com sucesso!', 'info');
+
+      } else if (data.status === 'failure') {
+        clearInterval(preprocessPollTimer);
+        preprocessPollTimer = null;
+        setPreprocessError('O pré-processamento falhou no servidor.');
+      }
+    } catch {
+      // network hiccup — keep trying
+    }
+  }, 1500);
+}
+
+function setPreprocessError(msg) {
+  const statusEl = document.getElementById('preprocessStatus');
+  statusEl.className = 'preprocess-status show error';
+  document.getElementById('preprocessPulse').className = 'pulse failure';
+  document.getElementById('preprocessStatusText').textContent = msg;
+  document.getElementById('preprocessBtn').disabled = false;
+  document.getElementById('preprocessBtn').textContent = '↺ Tentar novamente';
+  showToast(msg, 'error');
+}
+
+// ── SUBMIT ────────────────────────────────────────────────
+async function submitValidation() {
+  if (!selectedFile) { showToast('Por favor carregue um ficheiro primeiro.', 'error'); return; }
+  if (!datasetId)    { showToast('Por favor pré-processe o ficheiro primeiro (passo 2).', 'error'); return; }
+  if (!rules.length) { showToast('Adicione pelo menos uma regra antes de executar.', 'error'); return; }
+
+  const baseUrl = document.getElementById('baseUrl').value.replace(/\/$/, '');
+  const btn     = document.getElementById('submitBtn');
+  btn.disabled  = true;
+  btn.textContent = '⏳ A enviar…';
+
+  const params = new URLSearchParams({
+    dataset_id: datasetId,
+    rules: JSON.stringify(rules)
+  });
+
+  try {
+    const res  = await fetch(`${baseUrl}/validate?${params.toString()}`, { method: 'POST' });
+    const data = await res.json();
+
+    if (!res.ok) {
+      showToast(data.error || 'Falha ao enviar.', 'error');
+      return;
+    }
+
+    showStatusCard(data.job_id, 'queued');
+    startPolling(baseUrl, data.job_id);
+
+  } catch (err) {
+    showToast('Não foi possível contactar o backend. Está em execução?', 'error');
+  } finally {
+    btn.disabled    = false;
+    btn.textContent = '▶ Executar Validação';
+  }
+}
+
+// ── POLLING ───────────────────────────────────────────────
+function startPolling(baseUrl, jobId) {
+  if (pollTimer) clearInterval(pollTimer);
+
+  pollTimer = setInterval(async () => {
+    try {
+      const res  = await fetch(`${baseUrl}/results/${jobId}`);
+      const data = await res.json();
+
+      updateStatusCard(jobId, data.status);
+
+      if (data.status === 'success') {
+        clearInterval(pollTimer);
+        renderResults(data.result, jobId);
+      } else if (data.status === 'failure') {
+        clearInterval(pollTimer);
+        showToast('O job de validação falhou no servidor.', 'error');
+        updateStatusCard(jobId, 'failure');
+      }
+    } catch {
+      // network hiccup — keep trying
+    }
+  }, 1500);
+}
+
+// ── STATUS CARD ───────────────────────────────────────────
+function showStatusCard(jobId, status) {
+  const main = document.getElementById('mainPanel');
+  main.innerHTML = `
+    <div class="status-card" id="statusCard">
+      <div class="status-row">
+        <div class="pulse running" id="statusPulse"></div>
+        <span class="status-text" id="statusText">Na fila de espera…</span>
+      </div>
+      <div class="job-id">Job ID: ${jobId}</div>
+    </div>
+    <div id="resultsArea"></div>
+  `;
+}
+
+function updateStatusCard(jobId, status) {
+  const pulse = document.getElementById('statusPulse');
+  const text  = document.getElementById('statusText');
+  if (!pulse || !text) return;
+
+  const map = {
+    queued:  { cls: 'running', label: 'Na fila de espera…'   },
+    started: { cls: 'running', label: 'A executar validação…' },
+    success: { cls: 'success', label: 'Concluído'             },
+    failure: { cls: 'failure', label: 'Falhou'                },
+  };
+  const s = map[status] || { cls: 'idle', label: status };
+  pulse.className = `pulse ${s.cls}`;
+  text.textContent = s.label;
+}
+
+// ── RENDER RESULTS ────────────────────────────────────────
+function renderResults(report, jobId) {
+  const area = document.getElementById('resultsArea');
+  if (!area) return;
+
+  const summaryHtml = `
+    <div class="summary-pills">
+      <div class="pill pill-total">📋 ${report.total_rules} regras</div>
+      <div class="pill pill-pass">✔ ${report.passed} passou</div>
+      <div class="pill pill-fail">✘ ${report.failed} falhou</div>
+    </div>
+  `;
+
+  const rulesHtml = report.results.map((r, i) => {
+    const passed   = r.passed;
+    const errored  = !!r.error;
+    const cls      = errored ? 'errored' : passed ? 'passed' : 'failed';
+    const dotCls   = errored ? 'dot-warn'  : passed ? 'dot-pass' : 'dot-fail';
+    const failCnt  = (r.failures || []).length;
+
+    const meta = Object.entries(r.rule)
+      .filter(([k]) => k !== 'type')
+      .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+      .join(' · ');
+
+    // Resolve display name
+    const rDef = (window.availableRules || []).find(d => d.id === r.rule.type);
+    const displayName = rDef ? rDef.display_name : r.rule.type;
+
+    let bodyHtml = '';
+    if (errored) {
+      bodyHtml = `
+        <div class="failure-table-wrap">
+          <p style="font-family:var(--mono);font-size:12px;color:var(--warn);padding:4px 0;">${r.error}</p>
+        </div>`;
+    } else if (!passed && failCnt > 0) {
+      const cols = Object.keys(r.failures[0]);
+      const thead = cols.map(c => `<th>${c}</th>`).join('');
+      const rows  = r.failures.map(f =>
+        `<tr>${cols.map(c => `<td>${f[c] != null ? JSON.stringify(f[c]).replace(/^"|"$/g,'') : '—'}</td>`).join('')}</tr>`
+      ).join('');
+      bodyHtml = `
+        <div class="failure-table-wrap">
+          <table><thead><tr>${thead}</tr></thead><tbody>${rows}</tbody></table>
+        </div>`;
+    }
+
+    const countBadge = errored
+      ? `<span class="failure-count" style="background:rgba(251,146,60,.12);color:var(--warn);">erro</span>`
+      : `<span class="failure-count ${failCnt === 0 ? 'zero' : ''}">${failCnt === 0 ? '✔ passou' : `${failCnt} falha${failCnt > 1 ? 's' : ''}`}</span>`;
+
+    return `
+      <div class="rule-result ${cls}" id="rr_${i}">
+        <div class="rule-result-header" onclick="toggleResult(${i})">
+          <div class="status-dot ${dotCls}"></div>
+          <div class="rule-info">
+            <div class="rule-name">${displayName}</div>
+            <div class="rule-meta">${meta || '—'}</div>
+          </div>
+          ${countBadge}
+          <span class="chevron">›</span>
+        </div>
+        ${bodyHtml}
+      </div>`;
+  }).join('');
+
+  area.innerHTML = `
+    <div class="results-section">
+      ${summaryHtml}
+      ${rulesHtml}
+    </div>
+  `;
+}
+
+function toggleResult(i) {
+  const el = document.getElementById('rr_' + i);
+  if (el) el.classList.toggle('open');
+}
+
+// ── TOAST ─────────────────────────────────────────────────
+let toastTimer = null;
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = `toast show ${type}`;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = 'toast', 3500);
+}
+</script>
+</body>
+</html>
