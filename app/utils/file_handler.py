@@ -17,7 +17,7 @@ def save_upload(file: FileStorage, upload_folder: str) -> str:
     """
     original_name = secure_filename(file.filename)
     extension = original_name.rsplit(".", 1)[1].lower()
-    unique_id = 'dataset_' + str(uuid.uuid4().hex)
+    unique_id = 'dataframe_' + str(uuid.uuid4().hex)
     unique_name = f"{unique_id}.{extension}"
     file_path = os.path.join(upload_folder, unique_name)
     file.save(file_path)

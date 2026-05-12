@@ -2,13 +2,13 @@ import pandas as pd
 from app.utils import redis_store
 
 
-def load_dataset_into_store(file_path: str, dataset_id: str) -> pd.DataFrame:
+def load_dataframe_into_store(file_path: str, dataframe_id: str) -> pd.DataFrame:
     """
     Loads an Excel or CSV file into the in-memory store as a DataFrame.
 
     Args:
         file_path: Absolute path to the file to be loaded
-        dataset_id: The ID to associate with the loaded dataset
+        dataframe_id: The ID to associate with the loaded dataframe
     """
     if file_path.endswith((".xlsx", ".xls")):
         df = pd.read_excel(file_path)
@@ -17,53 +17,53 @@ def load_dataset_into_store(file_path: str, dataset_id: str) -> pd.DataFrame:
     else:
         raise ValueError("Unsupported file type. Only .xlsx, .xls, and .csv are accepted.")
     
-    redis_store.save_dataframe(dataset_id, df)
+    redis_store.save_dataframe(dataframe_id, df)
     return df
 
-def get_dataset_from_store(dataset_id: str) -> pd.DataFrame:
+def get_dataframe_from_store(dataframe_id: str) -> pd.DataFrame:
     """
-    Retrieves a dataset from the in-memory store.
+    Retrieves a dataframe from the in-memory store.
 
     Args:
-        dataset_id: The ID of the dataset to retrieve
+        dataframe_id: The ID of the dataframe to retrieve
 
     Returns:
-        The DataFrame associated with the given dataset_id
+        The DataFrame associated with the given dataframe_id
 
     Raises:
-        KeyError: If the dataset ID is not found in the store.
+        KeyError: If the dataframe ID is not found in the store.
     """
-    if redis_store.is_dataframe_stored(dataset_id):
-        return redis_store.load_dataframe(dataset_id)
+    if redis_store.is_dataframe_stored(dataframe_id):
+        return redis_store.load_dataframe(dataframe_id)
 
-    raise KeyError(f"Dataset with ID {dataset_id} not found in store")
+    raise KeyError(f"Dataframe with ID {dataframe_id} not found in store")
 
-def remove_dataset_from_store(dataset_id: str):
+def remove_dataframe_from_store(dataframe_id: str):
     """
-    Removes a dataset from the in-memory store. Doesn't check if it exists, just attempts to delete it.
+    Removes a dataframe from the in-memory store. Doesn't check if it exists, just attempts to delete it.
     """
-    redis_store.delete_dataframe(dataset_id)
+    redis_store.delete_dataframe(dataframe_id)
 
-def list_stored_datasets() -> list:
+def list_stored_dataframes() -> list:
     """
-    Lists all dataset IDs currently stored in the in-memory store.
+    Lists all dataframe IDs currently stored in the in-memory store.
 
     Returns:
-        A list of dataset IDs currently stored.
+        A list of dataframe IDs currently stored.
     """
-    return redis_store.list_keys()
+    return [key for key in redis_store.list_keys() if key.startswith("dataframe_")]
 
-def is_dataset_stored(dataset_id: str) -> bool:
+def is_dataframe_stored(dataframe_id: str) -> bool:
     """
-    Checks if a dataset with the given ID is currently stored in the in-memory store.
+    Checks if a dataframe with the given ID is currently stored in the in-memory store.
 
     Args:
-        dataset_id: The ID of the dataset to check
+        dataframe_id: The ID of the dataframe to check
 
     Returns:
-        True if the dataset is stored, False otherwise.
+        True if the dataframe is stored, False otherwise.
     """
-    return redis_store.is_dataframe_stored(dataset_id)
+    return redis_store.is_dataframe_stored(dataframe_id)
 
 # Info retrieval functions for preprocessing report
 DATATYPE_MAPPING = {
@@ -77,19 +77,19 @@ DATATYPE_MAPPING = {
 
 def get_column_names(df: pd.DataFrame) -> list:
     """
-    Retrieves the column names of a stored dataset.
+    Retrieves the column names of a stored dataframe.
 
     Args:
         df: The DataFrame for which to retrieve column names
 
     Returns:
-        A list of column names in the dataset.
+        A list of column names in the dataframe.
     """
     return df.columns.tolist()
 
 def get_presumed_data_types(df: pd.DataFrame) -> dict:
     """
-    Retrieves the presumed data types of each column in a stored dataset.
+    Retrieves the presumed data types of each column in a stored dataframe.
 
     Args:
         df: The DataFrame for which to retrieve data types

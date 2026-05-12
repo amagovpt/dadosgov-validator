@@ -1,13 +1,15 @@
 from flask import current_app
 import logging
 import time
+from datetime import datetime
 
-from app import celery
-from app.utils import dataset_processing, file_handler
+from app import celery, db
+from app.utils import dataframe_processing, file_handler
+from app.models import PreprocessingReport, TaskStatus
 
 
-@celery.task(name="dataset_store_tasks.preprocess_dataset", max_retries=3, default_retry_delay=5)
-def preprocess_dataset(file_path: str, dataset_id: str):
+@celery.task(bind=True, name="dataset_store_tasks.preprocess_dataset", max_retries=3, default_retry_delay=5)
+def preprocess_dataset(self, file_path: str, dataframe_id: str):
     """
     Celery task to load a dataset into the in-memory store.
 
@@ -15,36 +17,56 @@ def preprocess_dataset(file_path: str, dataset_id: str):
         file_path: Absolute path to the file to be loaded
         dataset_id: The ID to associate with the loaded dataset
     """
-    logging.info(f"Starting loading dataset from file into store with ID: {dataset_id}")
-    start_time = time.time()
-    df = dataset_processing.load_dataset_into_store(file_path, dataset_id)
-    logging.info(f"Finished loading dataset {dataset_id} into store in {time.time() - start_time:.2f} seconds")
+    # Mark as started
+    report = PreprocessingReport.query.filter_by(job_id=self.request.id).first()
+    report.status = TaskStatus.STARTED
+    db.session.commit()
 
-    file_handler.remove_file(file_path)  # Clean up the uploaded file immediately after loading into memory
+    try:
+        logging.info(f"Starting loading dataframe from file into store with ID: {dataframe_id}")
+        start_time = time.time()
+        df = dataframe_processing.load_dataframe_into_store(file_path, dataframe_id)
+        logging.info(f"Finished loading dataframe {dataframe_id} into store in {time.time() - start_time:.2f} seconds")
 
-    report = dict()
+        file_handler.remove_file(file_path)  # Clean up the uploaded file immediately after loading into memory
 
-    logging.info(f"Starting preprocessing for dataset: {dataset_id}")
-    start_time = time.time()
-    report["presumed_column_types"] = dataset_processing.get_presumed_data_types(df)
-    logging.info(f"Preprocessing completed for dataset: {dataset_id} in {time.time() - start_time:.2f} seconds")
+        results = dict()
 
-    # Schedule deletion of the dataset after a set timeout to prevent memory bloat. 
-    # This will only delete if the dataset is still stored (i.e. not already deleted by a previous validation run).
-    remove_dataset_if_still_stored.apply_async(args=[dataset_id], countdown=current_app.config["DATASET_STORE_REMOVAL_TIMEOUT"])  
+        logging.info(f"Starting preprocessing for dataframe: {dataframe_id}")
+        start_time = time.time()
+        results["column_names"] = dataframe_processing.get_column_names(df)
+        results["presumed_column_types"] = dataframe_processing.get_presumed_data_types(df)
+        logging.info(f"Preprocessing completed for dataframe: {dataframe_id} in {time.time() - start_time:.2f} seconds")
 
-    return report
+        # Schedule deletion of the dataframe after a set timeout to prevent memory bloat. 
+        # This will only delete if the dataframe is still stored (i.e. not already deleted by a previous validation run).
+        remove_dataframe_if_still_stored.apply_async(args=[dataframe_id], countdown=current_app.config["DATAFRAME_STORE_REMOVAL_TIMEOUT"])  
 
-@celery.task(name="dataset_store_tasks.remove_dataset_if_still_stored", max_retries=3, default_retry_delay=5)
-def remove_dataset_if_still_stored(dataset_id: str):
+        # Mark as complete
+        report.status = TaskStatus.SUCCESS
+        report.column_names = results["column_names"]
+        report.presumed_column_types = results["presumed_column_types"]
+        report.completed_at = datetime.now()
+        db.session.commit()
+    except Exception as e:
+        # Mark as failure
+        db.session.rollback()
+        report.status = TaskStatus.FAILURE
+        report.error_message = str(e)
+        report.completed_at = datetime.now()
+        db.session.commit()
+        raise
+
+@celery.task(name="dataframe_store_tasks.remove_dataframe_if_still_stored", max_retries=3, default_retry_delay=5)
+def remove_dataframe_if_still_stored(dataframe_id: str):
     """
-    Celery task to delete a dataset from the in-memory store.
+    Celery task to delete a dataframe from the in-memory store.
 
     Args:
-        dataset_id: The ID of the dataset to be deleted
+        dataframe_id: The ID of the dataframe to be deleted
     """
-    if dataset_processing.is_dataset_stored(dataset_id):
-        dataset_processing.remove_dataset_from_store(dataset_id)
-        logging.info(f"Dataset {dataset_id} removed from store after timeout")
+    if dataframe_processing.is_dataframe_stored(dataframe_id):
+        dataframe_processing.remove_dataframe_from_store(dataframe_id)
+        logging.info(f"Dataframe {dataframe_id} removed from store after timeout")
     else:
-        logging.info(f"Dataset {dataset_id} not found in store; no need to remove")
+        logging.info(f"Dataframe {dataframe_id} not found in store; no need to remove")

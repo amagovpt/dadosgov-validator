@@ -19,4 +19,12 @@ class Config:
     CELERY_ACCEPT_CONTENT = ["json"]
     CELERY_TASK_TRACK_STARTED = True
     CELERY_RESULT_EXPIRES = 3600  # Results expire after 1 hour
-    DATASET_STORE_REMOVAL_TIMEOUT = int(os.getenv("DATASET_STORE_REMOVAL_TIMEOUT", 30 * 60))  # 30 minutes default
+    DATAFRAME_STORE_REMOVAL_TIMEOUT = int(os.getenv("DATAFRAME_STORE_REMOVAL_TIMEOUT", 30 * 60))  # 30 minutes default
+
+    # Database
+    SQLALCHEMY_DATABASE_URI = os.getenv("DATABASE_URL")
+    SQLALCHEMY_TRACK_MODIFICATIONS = False
+    SQLALCHEMY_ENGINE_OPTIONS = {
+        "pool_pre_ping": True,       # Drops stale connections before use
+        "pool_recycle": 300,         # Recycles connections every 5 minutes
+    }
