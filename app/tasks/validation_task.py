@@ -9,7 +9,7 @@ from app.models import ValidationReport, TaskStatus
 
 
 @celery.task(bind=True, name="validation_task.run_validation", max_retries=3, default_retry_delay=5)
-def run_validation(self, dataframe_id: str, rules: list) -> dict:
+def run_validation(self, dataframe_ids: list[str], rules: list) -> dict:
     """
     Celery task that:
       1. Loads the Excel file into a DataFrame
@@ -18,7 +18,7 @@ def run_validation(self, dataframe_id: str, rules: list) -> dict:
       4. Cleans up the uploaded file afterwards
 
     Args:
-        dataframe_id: The ID of the dataframe to validate
+        dataframe_ids: A list of IDs of the dataframes to use for validation
         rules:     List of rule dicts, e.g. [{"type": "not_null", "column": "Age"}]
 
     Returns:
@@ -29,18 +29,18 @@ def run_validation(self, dataframe_id: str, rules: list) -> dict:
     db.session.commit()
 
     try:
-        # Get the dataframe from the in-memory store using the dataframe_id
-        logging.info(f"Starting validation for dataframe: {dataframe_id} with rules: {rules}")
+        # Get the dataframes from the in-memory store using the dataframe_ids
+        logging.info(f"Starting validation for dataframes: {dataframe_ids} with rules: {rules}")
 
         start_time = time.time()
-        df = dataframe_processing.get_dataframe_from_store(dataframe_id)
-        logging.info(f"Finished loading dataframe {dataframe_id} from store in {time.time() - start_time:.2f} seconds")
+        df_store = {df_id: dataframe_processing.get_dataframe_from_store(df_id) for df_id in dataframe_ids}
+        logging.info(f"Finished loading dataframes {dataframe_ids} from store in {time.time() - start_time:.2f} seconds")
         
         # Run all rules through the validation engine
-        logging.info(f"Running validation rules for dataframe: {dataframe_id}")
+        logging.info(f"Running validation rules for dataframes: {dataframe_ids}")
         start_time = time.time()
-        results = run_rules(df, rules)
-        logging.info(f"Finished validation for dataframe {dataframe_id} in {time.time() - start_time:.2f} seconds")
+        results = run_rules(df_store, rules)
+        logging.info(f"Finished validation for dataframes {dataframe_ids} in {time.time() - start_time:.2f} seconds")
 
         report.status = TaskStatus.SUCCESS
         report.report_result = results        # the full dict from run_rules()

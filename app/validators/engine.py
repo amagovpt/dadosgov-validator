@@ -1,23 +1,20 @@
 """
 Validation Engine
 =================
-This is the bridge between the Flask/Celery layer and your existing validation logic.
+This is the bridge between the Flask/Celery layer and the existing validation logic.
 
-HOW TO INTEGRATE YOUR EXISTING VALIDATORS:
+HOW TO INTEGRATE EXISTING VALIDATORS:
 -------------------------------------------
-Import your package directly:
-    from your_validation_package import validate_not_null, validate_min_value
+Import the package directly:
+    from validation_package import validate_not_null, validate_min_value
 
 RULE FORMAT:
 ------------
 Each rule is a dict with at minimum a "type" key.
 Additional keys depend on the rule type. Examples:
 
-    {"type": "not_null",   "column": "Age"}
-    {"type": "min_value",  "column": "Score",  "value": 0}
-    {"type": "max_value",  "column": "Score",  "value": 100}
-    {"type": "allowed_values", "column": "Status", "values": ["active", "inactive"]}
-    {"type": "unique",     "column": "ID"}
+    {"dataframe_ids": ["df1"], "type": "not_null",   "column": "Age"}
+    {"dataframe_ids": ["df1"], "type": "min_value",  "column": "Score",  "value": 0}
 """
 
 import pandas as pd
@@ -49,7 +46,7 @@ RULE_REGISTRY: dict = {
 }
 
 
-def run_rules(df: pd.DataFrame, rules: list) -> dict:
+def run_rules(df_store: dict[str, pd.DataFrame], rules: list) -> dict:
     """
     Runs all requested rules against the DataFrame and compiles a report.
 
@@ -70,19 +67,21 @@ def run_rules(df: pd.DataFrame, rules: list) -> dict:
     }
     """
     start_time = time.time()
-
     results = []
 
     for rule in rules:
         rule_type = rule.get("type")
-
         if rule_type not in RULE_REGISTRY:
             raise ValueError(f"Unknown rule type: {rule_type}. Please add it to the RULE_REGISTRY.")
-
         validator_fn = RULE_REGISTRY[rule_type]
+        
+        rule_dataframe_ids = rule.get("dataframe_ids", [])
+        if len(rule_dataframe_ids) == 0:
+            raise ValueError(f"Rule of type {rule_type} is missing 'dataframe_ids' key or it is empty.")
+        rule_df_list = [df_store[df_id] for df_id in rule_dataframe_ids]
 
         try:
-            failures = validator_fn(df, rule)
+            failures = validator_fn(rule_df_list, rule)
             results.append({
                 "rule": rule,
                 "passed": len(failures) == 0,
@@ -96,7 +95,6 @@ def run_rules(df: pd.DataFrame, rules: list) -> dict:
             })
 
     passed_count = sum(1 for r in results if r.get("passed"))
-
     end_time = time.time()
 
     return {

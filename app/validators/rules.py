@@ -5,7 +5,7 @@ These are placeholder implementations to get you started.
 Replace or extend these with your existing validation logic.
 
 Each function receives:
-  - df:   the full pandas DataFrame
+  - list of DataFrames (containing one or more datasets, covering rules that compare one or multiple datasets)
   - rule: the rule dict from the request
 
 Each function returns:
@@ -18,8 +18,24 @@ Failure dict shape (customise as needed):
 import pandas as pd
 
 
-def test_not_null(df: pd.DataFrame, rule: dict) -> list:
+# --- Helpers ---
+
+def _require_column(df: pd.DataFrame, rule: dict) -> str:
+    """Extracts and validates the 'column' key from a rule dict."""
+    column = rule.get("column")
+    if not column:
+        raise ValueError(f"Rule '{rule.get('type')}' requires a 'column' key")
+    if column not in df.columns:
+        raise ValueError(f"Column '{column}' not found in dataset. Available columns: {list(df.columns)}")
+    return column
+
+# --- Rule implementations ---
+
+def test_not_null(df_list: list, rule: dict) -> list:
     """Fails for any row where the column value is null/NaN."""
+    assert len(df_list) == 1, "test_not_null expects exactly one dataset"
+    df = df_list[0]  # Assuming we're working with the first DataFrame
+    
     column = _require_column(df, rule)
     failures = []
     for idx, value in df[column].items():
@@ -28,8 +44,11 @@ def test_not_null(df: pd.DataFrame, rule: dict) -> list:
 
     return failures
 
-def test_unique_generic(df: pd.DataFrame, rule: dict) -> list:
+def test_unique_generic(df_list: list, rule: dict) -> list:
     """Fails for any column or combination of columns that has duplicate values."""
+    assert len(df_list) == 1, "test_unique_generic expects exactly one dataset"
+    df = df_list[0]
+
     columns = rule.get("columns")
     if not isinstance(columns, list):
         raise ValueError("Rule 'unique_generic' requires a 'columns' key with a list")
@@ -43,11 +62,14 @@ def test_unique_generic(df: pd.DataFrame, rule: dict) -> list:
 
     return failures
 
-def test_length_max(df: pd.DataFrame, rule: dict) -> list:
+def test_length_max(df_list: list, rule: dict) -> list:
     """
     Fails for rows where the length of the string in the column exceeds max_length. 
     Casts to text and ignores '.' when counting length on numeric values. Ignores null/NaN values.
     """
+    assert len(df_list) == 1, "test_length_max expects exactly one dataset"
+    df = df_list[0]
+    
     column = _require_column(df, rule)
     max_length = rule.get("max_length")
 
@@ -91,11 +113,14 @@ def test_length_max(df: pd.DataFrame, rule: dict) -> list:
 
     return failures
 
-def test_length_min(df: pd.DataFrame, rule: dict) -> list:
+def test_length_min(df_list: list, rule: dict) -> list:
     """
     Fails for rows where the length of the string in the column is less than min_length. 
     Casts to text and ignores '.' when counting length on numeric values. Ignores null/NaN values.
     """
+    assert len(df_list) == 1, "test_length_min expects exactly one dataset"
+    df = df_list[0]
+
     column = _require_column(df, rule)
     min_length = rule.get("min_length")
 
@@ -139,11 +164,14 @@ def test_length_min(df: pd.DataFrame, rule: dict) -> list:
 
     return failures
 
-def test_length_exact(df: pd.DataFrame, rule: dict) -> list:
+def test_length_exact(df_list: list, rule: dict) -> list:
     """
     Fails for rows where the length of the string in the column is not equal to exact_length. 
     Casts to text and ignores '.' when counting length on numeric values. Ignores null/NaN values.
     """
+    assert len(df_list) == 1, "test_length_exact expects exactly one dataset"
+    df = df_list[0]
+
     column = _require_column(df, rule)
     exact_length = rule.get("exact_length")
 
@@ -187,8 +215,11 @@ def test_length_exact(df: pd.DataFrame, rule: dict) -> list:
 
     return failures
 
-def test_possible_values(df: pd.DataFrame, rule: dict) -> list:
+def test_possible_values(df_list: list, rule: dict) -> list:
     """Fails if any of the non-null values in the column are not in the allowed set. Converts values to string for comparison, so that e.g. numeric 1 will match string "1" in the allowed set."""
+    assert len(df_list) == 1, "test_possible_values expects exactly one dataset"
+    df = df_list[0]
+
     column = _require_column(df, rule)
     allowed_values = set(rule.get("possible_values", []))
     if len(allowed_values) == 0:
@@ -225,13 +256,16 @@ def test_percentage_max_decimal_places(df: pd.DataFrame, rule: dict) -> list:
 
     return failures
 
-def test_domains_numeric(df: pd.DataFrame, rule: dict) -> list:
+def test_domains_numeric(df_list: list, rule: dict) -> list:
     """
     Validates that a numeric column is within an allowed range.
         - If min_value is provided: fails rows where value < min_value
         - If max_value is provided: fails rows where value > max_value
         - If both are provided: fails rows outside [min_value, max_value]
     """
+    assert len(df_list) == 1, "test_domains_numeric expects exactly one dataset"
+    df = df_list[0]
+
     column = _require_column(df, rule)
     min_value = rule.get("min_value")
     max_value = rule.get("max_value")
@@ -260,12 +294,15 @@ def test_domains_numeric(df: pd.DataFrame, rule: dict) -> list:
 
     return failures
 
-def test_one_to_one_columns(df: pd.DataFrame, rule: dict) -> list:
+def test_one_to_one_columns(df_list: list, rule: dict) -> list:
     """
     Validates that two columns have a one-to-one relationship (i.e. for each value in column1, 
     there is exactly one corresponding value in column2, and vice versa). Fails for any rows where 
     the combination of values in the specified columns is duplicated.
     """
+    assert len(df_list) == 1, "test_one_to_one_columns expects exactly one dataset"
+    df = df_list[0]
+
     column1 = rule.get("column1")
     column2 = rule.get("column2")
 
@@ -290,13 +327,9 @@ def test_one_to_one_columns(df: pd.DataFrame, rule: dict) -> list:
 
     return failures
 
-# --- Helpers ---
+def test_boundaries_extended_table_coherence(df_list: list, rule: dict) -> list:
+    assert len(df_list) == 2, "test_boundaries_extended_table_coherence expects exactly two datasets"
+    df_source = df_list[0]
+    df_extended = df_list[1]
+    pass
 
-def _require_column(df: pd.DataFrame, rule: dict) -> str:
-    """Extracts and validates the 'column' key from a rule dict."""
-    column = rule.get("column")
-    if not column:
-        raise ValueError(f"Rule '{rule.get('type')}' requires a 'column' key")
-    if column not in df.columns:
-        raise ValueError(f"Column '{column}' not found in dataset. Available columns: {list(df.columns)}")
-    return column

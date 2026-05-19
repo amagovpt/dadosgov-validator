@@ -18,11 +18,6 @@ class PreprocessingReport(db.Model):
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc))
     completed_at = db.Column(db.DateTime)
 
-    # One preprocessing run can have many validation runs
-    validation_reports = db.relationship(
-        "ValidationReport", back_populates="preprocessing_report", lazy="dynamic"
-    )
-
     def __repr__(self):
         return f"<PreprocessingReport dataframe_id={self.dataframe_id} status={self.status}>"
     

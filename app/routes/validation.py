@@ -1,5 +1,6 @@
 from flask import Blueprint, request, jsonify, current_app
 import uuid
+import json
 
 from app.tasks import validation_task 
 from app.tasks import preprocessing_tasks
@@ -93,7 +94,7 @@ def get_preprocessing_results(job_id):
     report: PreprocessingReport = PreprocessingReport.query.filter_by(job_id=job_id).first()
 
     if report is None:
-        return jsonify({"error": f"The {job_id} job_id is not associated with any results"}), 400
+        return jsonify({"error": f"The {job_id} job_id is not associated with any preprocessing results"}), 400
 
     if report.status == TaskStatus.QUEUED:
         return jsonify({"job_id": job_id, "status": "queued"}), 202
@@ -115,7 +116,7 @@ def get_preprocessing_results(job_id):
 def validate():
     """
     Accepts a multipart/form-data request with:
-      - dataframe_id: the ID of the dataframe to validate (must have been returned from /preprocess)
+      - datasets: a JSON object mapping dataframe_ids to preprocessing_report_ids, e.g. {"dataframe_id1": "preprocessing_report_id1", "dataframe_id2": "preprocessing_report_id2"}
       - rules: a JSON array of rule objects
 
     Returns a job_id to poll for results.
@@ -126,28 +127,40 @@ def validate():
         -F 'rules=[{"type": "not_null", "column": "Age"}, {"type": "min_value", "column": "Score", "value": 0}]'
     """
     # --- Validate request ---
-    dataframe_id = request.args.get("dataframe_id")
-    if not dataframe_id:
-        return jsonify({"error": "No dataframe_id provided. Please upload a file first to get a dataframe_id."}), 400
+    datasets = request.args.get("datasets")
+    if not datasets:
+        return jsonify({"error": "No datasets parameter provided. Please preprocess datasets first."}), 400
 
-    if not dataframe_processing.is_dataframe_stored(dataframe_id):
-        return jsonify({"error": f"Dataframe with ID {dataframe_id} not found. It may still be processing."}), 400
+    # Expect a JSON composed of {dataframe_id: preprocessing_report_id} pairs
+    try:
+        datasets = json.loads(datasets)
+    except json.JSONDecodeError:
+        return jsonify({"error": "Invalid JSON in datasets parameter"}), 400
+
+    not_found_errors = list()
+
+    # Check if all provided dataframe_ids are stored and accessible
+    for dataframe_id in datasets.keys():
+        if not dataframe_processing.is_dataframe_stored(dataframe_id):
+            not_found_errors.append(f"Dataframe with ID {dataframe_id} not found. It may still be processing.")
+    
+    # Check if all provided preprocessing_report_ids are stored and accessible
+    for preprocessing_report_id in datasets.values():
+        try:
+            report = PreprocessingReport.query.filter_by(id=preprocessing_report_id).first()
+        except Exception as e:
+            print(f"Error occurred while querying preprocessing report: {e}")
+            
+        if report is None:
+            not_found_errors.append(f"Preprocessing report with ID {preprocessing_report_id} not found. It may still be processing.")
+
+    if len(not_found_errors) > 0:
+        return jsonify({"error": ", ".join(not_found_errors)}), 400
 
     rules_raw = request.args.get("rules")
     if not rules_raw:
         return jsonify({"error": "No rules provided"}), 400
-    
-    preprocessing_job_id = request.args.get("preprocessing_job_id")
-    if not preprocessing_job_id:
-        return jsonify({"error": "No preprocessing_job_id provided."})
-    
-    preprocessing_report = PreprocessingReport.query.filter_by(
-        id=preprocessing_job_id
-    ).first()
-    if preprocessing_report is None:
-        return jsonify({"error": "The preprocessing_job_id provided doesn't match any preprocessing report stored."})
 
-    import json
     try:
         rules = json.loads(rules_raw)
     except json.JSONDecodeError:
@@ -157,12 +170,12 @@ def validate():
         return jsonify({"error": "Rules must be a non-empty JSON array"}), 400
 
     # --- Running the task ---
-    task = validation_task.run_validation.s(dataframe_id, rules)
+    task = validation_task.run_validation.s(list(datasets.keys()), rules)
     task.set(task_id=str(uuid.uuid4()))
 
     report = ValidationReport(
         job_id=task.id,
-        preprocessing_report_id=preprocessing_report.id,
+        preprocessing_report_ids=list(datasets.values()), # store the list of preprocessing report IDs associated with this validation
         rules_applied=rules,
         status=TaskStatus.QUEUED
     )
@@ -192,7 +205,7 @@ def get_validation_results(job_id):
     report: ValidationReport = ValidationReport.query.filter_by(job_id=job_id).first()
 
     if report is None:
-        return jsonify({"error": f"The {job_id} job_id is not associated with any results"}), 400
+        return jsonify({"error": f"The {job_id} job_id is not associated with any validation results"}), 400
 
     if report.status == TaskStatus.QUEUED:
         return jsonify({"job_id": job_id, "status": "queued"}), 202

@@ -8,9 +8,10 @@ class ValidationReport(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     job_id = db.Column(db.String(64), nullable=False, unique=True)
-    preprocessing_report_id = db.Column(
-        db.Integer, db.ForeignKey("preprocessing_reports.id"), nullable=False, index=True
-    )
+    
+    # List of preprocessing report IDs, one per dataset submitted for this validation
+    preprocessing_report_ids = db.Column(db.JSON, nullable=False)
+    
     status = db.Column(db.Enum(TaskStatus, native_enum=False), nullable=False, default=TaskStatus.QUEUED)
     rules_applied = db.Column(db.JSON)       # The rules list sent by the client
     report_result = db.Column(db.JSON)       # The full report dict from run_rules()
@@ -18,10 +19,6 @@ class ValidationReport(db.Model):
     error_message = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now())
     completed_at = db.Column(db.DateTime)
-
-    preprocessing_report = db.relationship(
-        "PreprocessingReport", back_populates="validation_reports"
-    )
 
     def __repr__(self):
         return f"<ValidationReport job={self.job_id} passed={self.passed}>"
