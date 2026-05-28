@@ -221,6 +221,32 @@ RULE_DESCRIPTIONS = {
                     }
                 }
             }
+        },
+        {
+            "id": "test_boundaries_extended_table_coherence",
+            "display_name": "Coerência entre tabela base e tabela estendida",
+            "description": "Verifica se os valores de uma coluna em uma tabela base estão coerentes com os valores de uma coluna em uma tabela estendida, garantindo que não haja valores na tabela estendida que não existam na tabela base.",
+            "parameters": {
+                "dataset_parameters": {
+                    "amount_of_datasets": "2",
+                    "dataset_descriptions": {
+                        "dataset1": "A tabela base que contém a coluna de referência",
+                        "dataset2": "A tabela estendida que contém a coluna a ser validada contra a tabela base"
+                    }
+                },
+                "validation_parameters": {
+                    "base_column": {
+                        "type": "string",
+                        "description": "O nome da coluna na tabela base que serve como referência",
+                        "required": True
+                    },
+                    "extended_column": {
+                        "type": "string",
+                        "description": "O nome da coluna na tabela estendida que deve ser validada contra a coluna da tabela base",
+                        "required": True
+                    }
+                }
+            }
         }
     ]
 }

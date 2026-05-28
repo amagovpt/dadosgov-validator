@@ -230,8 +230,11 @@ def test_possible_values(df_list: list, rule: dict) -> list:
             failures.append({"row": int(idx), "column": column, "value": value, "message": f"O valor não está no conjunto de valores permitidos"})
     return failures
 
-def test_percentage_max_decimal_places(df: pd.DataFrame, rule: dict) -> list:
+def test_percentage_max_decimal_places(df_list: list, rule: dict) -> list:
     """ For percentage (or decimal) columns: fails for rows where the number of decimal places exceeds max_number_decimal_places."""
+    assert len(df_list) == 1, "test_percentage_max_decimal_places expects exactly one dataset"
+    df = df_list[0]
+
     column = _require_column(df, rule)
     max_decimal_places = rule.get("max_decimal_places")
 
@@ -328,8 +331,67 @@ def test_one_to_one_columns(df_list: list, rule: dict) -> list:
     return failures
 
 def test_boundaries_extended_table_coherence(df_list: list, rule: dict) -> list:
+    """
+    Checks if all values of a column in the base dataset are present in a specified column of an extended dataset. 
+    Fails for any value in the base column that is not found in the extended column. Ignores null/NaN values.
+    """
     assert len(df_list) == 2, "test_boundaries_extended_table_coherence expects exactly two datasets"
-    df_source = df_list[0]
+    df_base = df_list[0]
     df_extended = df_list[1]
-    pass
 
+    base_column = rule.get("base_column")
+    extended_column = rule.get("extended_column")
+
+    if not base_column or not extended_column:
+        raise ValueError("Rule 'test_boundaries_extended_table_coherence' requires 'base_column' and 'extended_column' keys")
+    if base_column not in df_base.columns:
+        raise ValueError(f"Base column '{base_column}' not found in the first dataset. Available columns: {list(df_base.columns)}")
+    if extended_column not in df_extended.columns:
+        raise ValueError(f"Extended column '{extended_column}' not found in the second dataset. Available columns: {list(df_extended.columns)}")
+    
+    extended_values = set(df_extended[extended_column].dropna().astype(str))
+    failures = []
+    for value in set(df_base[base_column].dropna().astype(str)):
+        if pd.isna(value):
+            continue
+        if str(value) not in extended_values:
+            failures.append({"column": base_column, "value": value, "message": f"O valor em '{base_column}' não foi encontrado no campo correspondente em '{extended_column}'"})
+    return failures
+
+def test_domains_unique_value_across_datasets(df_list: list, rule: dict) -> list:
+    """
+    Validates that the first listed Dataframe contains one unique value for the specified column, and that
+    all the other Dataframes contain only that value in the specified columns. Fails if the first Dataframe
+    contains more than one unique value, or if any of the other Dataframes contain a value different from 
+    the unique value in the first Dataframe. Ignores null/NaN values. 
+    """
+    assert len(df_list) >= 1, "test_domains_unique_value_across_datasets expects at least one dataset"
+    df_reference = df_list[0]
+    reference_column = rule.get("column_1")
+
+    if not reference_column:
+        raise ValueError("Rule 'test_domains_unique_value_across_datasets' requires 'column_1' key")
+    if reference_column not in df_reference.columns:
+        raise ValueError(f"Reference column '{reference_column}' not found in the first dataset. Available columns: {list(df_reference.columns)}")
+    
+    unique_values = set(df_reference[reference_column].dropna().astype(str))
+    if len(unique_values) != 1:
+        raise ValueError(f"Column '{reference_column}' in the first dataset must contain exactly one unique non-null value for this rule. Found values: {unique_values}")
+    unique_value = unique_values.pop()
+
+    failures = []
+    for i in range(1, len(df_list)):
+        df = df_list[i]
+        column = rule.get(f"column_{i+1}")
+        if not column:
+            raise ValueError(f"Rule 'test_domains_unique_value_across_datasets' requires 'column_{i+1}' key for dataset {i+1}")
+        if column not in df.columns:
+            raise ValueError(f"Column '{column}' not found in dataset {i+1}. Available columns: {list(df.columns)}")
+        
+        for idx, value in df[column].items():
+            if pd.isna(value):
+                continue
+            if str(value) != unique_value:
+                failures.append({"row": int(idx), "column": column, "value": value, "message": f"O valor deve ser '{unique_value}' para corresponder ao valor único encontrado em '{reference_column}' no primeiro dataset"})
+    
+    return failures

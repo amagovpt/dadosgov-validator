@@ -28,7 +28,8 @@ from app.validators.rules import (
     test_possible_values,
     test_percentage_max_decimal_places,
     test_domains_numeric,
-    test_one_to_one_columns
+    test_one_to_one_columns,
+    test_boundaries_extended_table_coherence
 )
 
 # Maps rule type strings to validator functions
@@ -43,6 +44,7 @@ RULE_REGISTRY: dict = {
     'test_percentage_max_decimal_places': test_percentage_max_decimal_places,
     'test_domains_numeric': test_domains_numeric,
     'test_one_to_one_columns': test_one_to_one_columns,
+    'test_boundaries_extended_table_coherence': test_boundaries_extended_table_coherence
 }
 
 

@@ -33,6 +33,8 @@ def run_validation(self, dataframe_ids: list[str], rules: list) -> dict:
         logging.info(f"Starting validation for dataframes: {dataframe_ids} with rules: {rules}")
 
         start_time = time.time()
+
+        # The df_store is prepared in order to avoid multiple calls to the store for the same dataframe when there are multiple rules using the same dataframe
         df_store = {df_id: dataframe_processing.get_dataframe_from_store(df_id) for df_id in dataframe_ids}
         logging.info(f"Finished loading dataframes {dataframe_ids} from store in {time.time() - start_time:.2f} seconds")
         
