@@ -401,3 +401,26 @@ def test_domains_only_one_value_across_datasets(df_list: list, rule: dict) -> li
                 failures.append({"row": int(idx), "column": column, "value": value, "message": f"O valor deve ser '{unique_value}' para corresponder ao valor único encontrado em '{base_column}' no primeiro dataset"})
     
     return failures
+
+def test_format_no_leading_whitespace(df_list: list, rule: dict):
+    """
+    Validates formatting issues in a text column. Fails for:
+        - Values starting with an empty space
+        - Values starting with a tab
+    Ignores null/NaN values.
+    """
+    assert len(df_list) == 1, "test_format_no_leading_whitespace expects exactly one dataset"
+    df = df_list[0]
+
+    column = _require_column(df, rule)
+    failures = []
+    for idx, value in df[column].items():
+        if pd.isna(value):
+            continue
+
+        if value.startswith(' '):
+            failures.append({"row": int(idx), "value": value, "message": f"O valor começa com um espaço vazio"})
+        elif value.startswith('\t'):
+            failures.append({"row": int(idx), "value": value, "message": f"O valor começa com uma tabulação"})
+
+    return failures

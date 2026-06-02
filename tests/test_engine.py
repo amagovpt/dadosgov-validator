@@ -133,6 +133,23 @@ def test_domains_only_one_value_across_datasets_fails_2_dfs():
         })
     )
 
+@pytest.fixture
+def test_format_no_leading_whitespace_passes_df():
+    return pd.DataFrame({
+        "Value": ["a", "b", "c", None]
+    })
+
+@pytest.fixture
+def test_format_no_leading_whitespace_fails_1_df():
+    return pd.DataFrame({
+        "Value": [" a", "b", "c", None]
+    })
+
+@pytest.fixture
+def test_format_no_leading_whitespace_fails_2_df():
+    return pd.DataFrame({
+        "Value": [" a", "\tb", "c", None]
+    })
 
 # -------------------- TEST NOT NULL --------------------
 def test_not_null_passes(test_not_null_df):
@@ -555,3 +572,59 @@ def test_domains_only_one_value_across_datasets_fails_1(test_domains_only_one_va
 
     assert report["passed"] == 0, json.dumps(report, indent=4)
     assert report["failed"] == 1, json.dumps(report, indent=4)
+
+# -------------------- TEST FORMAT NO LEADING WHITESPACE --------------------
+def test_format_no_leading_whitespace_passes(test_format_no_leading_whitespace_passes_df):
+    df_id = f"dataframe_{str(uuid.uuid4())}"
+    redis_store.save_dataframe(df_id, test_format_no_leading_whitespace_passes_df)
+
+    rules = [
+        {
+            "dataframe_ids": [df_id],
+            "type": "test_format_no_leading_whitespace",
+            "column": "Value"
+        }
+    ]
+    df_store = {df_id: test_format_no_leading_whitespace_passes_df}
+    report = run_rules(df_store, rules)
+    redis_store.delete_dataframe(df_id)
+
+    assert report["passed"] == 1, json.dumps(report, indent=4)
+    assert report["failed"] == 0, json.dumps(report, indent=4)
+
+def test_format_no_leading_whitespace_fails_1(test_format_no_leading_whitespace_fails_1_df):
+    df_id = f"dataframe_{str(uuid.uuid4())}"
+    redis_store.save_dataframe(df_id, test_format_no_leading_whitespace_fails_1_df)
+
+    rules = [
+        {
+            "dataframe_ids": [df_id],
+            "type": "test_format_no_leading_whitespace",
+            "column": "Value"
+        }
+    ]
+    df_store = {df_id: test_format_no_leading_whitespace_fails_1_df}
+    report = run_rules(df_store, rules)
+    redis_store.delete_dataframe(df_id)
+
+    assert report["passed"] == 0, json.dumps(report, indent=4)
+    assert report["failed"] == 1, json.dumps(report, indent=4)
+
+def test_format_no_leading_whitespace_fails_2(test_format_no_leading_whitespace_fails_2_df):
+    df_id = f"dataframe_{str(uuid.uuid4())}"
+    redis_store.save_dataframe(df_id, test_format_no_leading_whitespace_fails_2_df)
+
+    rules = [
+        {
+            "dataframe_ids": [df_id],
+            "type": "test_format_no_leading_whitespace",
+            "column": "Value"
+        }
+    ]
+    df_store = {df_id: test_format_no_leading_whitespace_fails_2_df}
+    report = run_rules(df_store, rules)
+    redis_store.delete_dataframe(df_id)
+
+    assert report["passed"] == 0, json.dumps(report, indent=4)
+    assert report["failed"] == 1, json.dumps(report, indent=4)
+

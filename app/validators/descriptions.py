@@ -293,6 +293,27 @@ RULE_DESCRIPTIONS = {
                     }
                 }
             }
+        },
+        {
+            "id": "test_format_no_leading_whitespace",
+            "display_name": "Sem espaço no início dos valores",
+            "description": "Verifica se os valores em uma coluna específica não começam com um espaço vazio",
+            "parameters": {
+                "dataset_parameters": {
+                    "min_datasets": 1,
+                    "max_datasets": 1,
+                    "dataset_descriptions": {
+                        "dataset1": "O dataset que contém a coluna a ser validada"
+                    }
+                },
+                "validation_parameters": {
+                    "column": {
+                        "type": "string",
+                        "description": "O nome da coluna a ser validada",
+                        "required": True
+                    }
+                }
+            }
         }
     ]
 }

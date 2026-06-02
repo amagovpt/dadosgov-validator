@@ -30,7 +30,8 @@ from app.validators.rules import (
     test_domains_numeric,
     test_one_to_one_columns,
     test_boundaries_extended_table_coherence,
-    test_domains_only_one_value_across_datasets
+    test_domains_only_one_value_across_datasets,
+    test_format_no_leading_whitespace
 )
 
 # Maps rule type strings to validator functions
@@ -46,7 +47,8 @@ RULE_REGISTRY: dict = {
     'test_domains_numeric': test_domains_numeric,
     'test_one_to_one_columns': test_one_to_one_columns,
     'test_boundaries_extended_table_coherence': test_boundaries_extended_table_coherence,
-    'test_domains_only_one_value_across_datasets': test_domains_only_one_value_across_datasets
+    'test_domains_only_one_value_across_datasets': test_domains_only_one_value_across_datasets,
+    'test_format_no_leading_whitespace': test_format_no_leading_whitespace
 }
 
 
