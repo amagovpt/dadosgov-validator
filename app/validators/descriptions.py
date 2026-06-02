@@ -6,7 +6,8 @@ RULE_DESCRIPTIONS = {
             "description": "Verifica se os valores em uma coluna específica não são nulos.",
             "parameters": {
                 "dataset_parameters": {
-                    "amount_of_datasets": "1",
+                    "min_datasets": 1,
+                    "max_datasets": 1,
                     "dataset_descriptions": {
                         "dataset1": "O dataset que contém a coluna a ser validada"
                     }
@@ -26,7 +27,8 @@ RULE_DESCRIPTIONS = {
             "description": "Verifica se os valores em uma ou mais colunas combinadas não se repetem.",
             "parameters": {
                 "dataset_parameters": {
-                    "amount_of_datasets": "1",
+                    "min_datasets": 1,
+                    "max_datasets": 1,
                     "dataset_descriptions": {
                         "dataset1": "O dataset que contém a coluna a ser validada"
                     }
@@ -34,7 +36,11 @@ RULE_DESCRIPTIONS = {
                 "validation_parameters": {
                     "columns": {
                         "type": "array",
-                        "items": {"type": "string"},
+                        "min_items": 2,
+                        "items": {
+                            "type": "string",
+                            "description": "Nome da coluna do dataset ?"
+                        },
                         "description": "Lista de colunas que, combinadas, devem ter valores únicos",
                         "required": True
                     }
@@ -47,7 +53,8 @@ RULE_DESCRIPTIONS = {
             "description": "Verifica se os valores em uma coluna não excedem um comprimento máximo especificado.",
             "parameters": {
                 "dataset_parameters": {
-                    "amount_of_datasets": "1",
+                    "min_datasets": 1,
+                    "max_datasets": 1,
                     "dataset_descriptions": {
                         "dataset1": "O dataset que contém a coluna a ser validada"
                     }
@@ -72,7 +79,8 @@ RULE_DESCRIPTIONS = {
             "description": "Verifica se os valores em uma coluna têm pelo menos um comprimento mínimo especificado.",
             "parameters": {
                 "dataset_parameters": {
-                    "amount_of_datasets": "1",
+                    "min_datasets": 1,
+                    "max_datasets": 1,
                     "dataset_descriptions": {
                         "dataset1": "O dataset que contém a coluna a ser validada"
                     }
@@ -97,7 +105,8 @@ RULE_DESCRIPTIONS = {
             "description": "Verifica se os valores em uma coluna têm um comprimento exato especificado.",
             "parameters": {
                 "dataset_parameters": {
-                    "amount_of_datasets": "1",
+                    "min_datasets": 1,
+                    "max_datasets": 1,
                     "dataset_descriptions": {
                         "dataset1": "O dataset que contém a coluna a ser validada"
                     }
@@ -122,7 +131,8 @@ RULE_DESCRIPTIONS = {
             "description": "Verifica se os valores em uma coluna estão dentro de um conjunto permitido de valores.",
             "parameters": {
                 "dataset_parameters": {
-                    "amount_of_datasets": "1",
+                    "min_datasets": 1,
+                    "max_datasets": 1,
                     "dataset_descriptions": {
                         "dataset1": "O dataset que contém a coluna a ser validada"
                     }
@@ -148,7 +158,8 @@ RULE_DESCRIPTIONS = {
             "description": "Verifica se os valores em uma coluna de porcentagens têm no máximo um número específico de casas decimais.",
             "parameters": {
                 "dataset_parameters": {
-                    "amount_of_datasets": "1",
+                    "min_datasets": 1,
+                    "max_datasets": 1,
                     "dataset_descriptions": {
                         "dataset1": "O dataset que contém a coluna a ser validada"
                     }
@@ -173,7 +184,8 @@ RULE_DESCRIPTIONS = {
             "description": "Verifica se os valores em uma coluna numérica estão dentro de um intervalo permitido (ex: entre 0 e 100 para porcentagens).",
             "parameters": {
                 "dataset_parameters": {
-                    "amount_of_datasets": "1",
+                    "min_datasets": 1,
+                    "max_datasets": 1,
                     "dataset_descriptions": {
                         "dataset1": "O dataset que contém a coluna a ser validada"
                     }
@@ -203,7 +215,8 @@ RULE_DESCRIPTIONS = {
             "description": "Verifica se há uma relação 1-para-1 entre os valores de duas colunas (ex: cada valor em 'ID' corresponde a exatamente um valor em 'Email' e vice-versa).",
             "parameters": {
                 "dataset_parameters": {
-                    "amount_of_datasets": "1",
+                    "min_datasets": 1,
+                    "max_datasets": 1,
                     "dataset_descriptions": {
                         "dataset1": "O dataset que contém as colunas a serem validadas"
                     }
@@ -228,10 +241,11 @@ RULE_DESCRIPTIONS = {
             "description": "Verifica se os valores de uma coluna em uma tabela base estão coerentes com os valores de uma coluna em uma tabela estendida, garantindo que não haja valores na tabela estendida que não existam na tabela base.",
             "parameters": {
                 "dataset_parameters": {
-                    "amount_of_datasets": "2",
+                    "min_datasets": 2,
+                    "max_datasets": 2,
                     "dataset_descriptions": {
                         "dataset1": "A tabela base que contém a coluna de referência",
-                        "dataset2": "A tabela estendida que contém a coluna a ser validada contra a tabela base"
+                        "dataset2": "A tabela estendida que contém a coluna a ser validada em relação à a tabela base"
                     }
                 },
                 "validation_parameters": {
@@ -242,7 +256,39 @@ RULE_DESCRIPTIONS = {
                     },
                     "extended_column": {
                         "type": "string",
-                        "description": "O nome da coluna na tabela estendida que deve ser validada contra a coluna da tabela base",
+                        "description": "O nome da coluna na tabela estendida que deve ser validada em relação à coluna da tabela base",
+                        "required": True
+                    }
+                }
+            }
+        },
+        {
+            "id": "test_domains_only_one_value_across_datasets",
+            "display_name": "Somente um valor entre datasets",
+            "description": "Valida que o priemiro dataset contêm somente um valor na coluna de referência, e todos os datasets a seguir contêm apenas esse valor nas colunas especificadas.",
+            "parameters": {
+                "dataset_parameters": {
+                    "min_datasets": 2,
+                    "max_datasets": None,
+                    "dataset_descriptions": {
+                        "dataset1": "A tabela base que contém a coluna de referência",
+                        "dataset?": "A tabela estendida que contém a coluna a ser validada em relação à tabela base"
+                    }
+                },
+                "validation_parameters": {
+                    "base_column": {
+                        "type": "string",
+                        "description": "O nome da coluna na tabela base que serve como referência",
+                        "required": True
+                    },
+                    "extended_columns": {
+                        "type": "array",
+                        "min_items": 1,
+                        "description": "Lista de colunas estendidas, uma por tabela adicional",
+                        "items": {
+                            "type": "string",
+                            "description": "Nome da coluna na tabela estendida correspondente"
+                        },
                         "required": True
                     }
                 }

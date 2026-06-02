@@ -358,40 +358,46 @@ def test_boundaries_extended_table_coherence(df_list: list, rule: dict) -> list:
             failures.append({"column": base_column, "value": value, "message": f"O valor em '{base_column}' não foi encontrado no campo correspondente em '{extended_column}'"})
     return failures
 
-def test_domains_unique_value_across_datasets(df_list: list, rule: dict) -> list:
+def test_domains_only_one_value_across_datasets(df_list: list, rule: dict) -> list:
+    # test_domains_distinct_reference_dates_all at the airflow project
     """
     Validates that the first listed Dataframe contains one unique value for the specified column, and that
     all the other Dataframes contain only that value in the specified columns. Fails if the first Dataframe
     contains more than one unique value, or if any of the other Dataframes contain a value different from 
     the unique value in the first Dataframe. Ignores null/NaN values. 
     """
-    assert len(df_list) >= 1, "test_domains_unique_value_across_datasets expects at least one dataset"
-    df_reference = df_list[0]
-    reference_column = rule.get("column_1")
+    assert len(df_list) >= 2, "test_domains_unique_value_across_datasets expects at least two datasets"
+    df_base = df_list[0]
+    base_column = rule.get("base_column")
 
-    if not reference_column:
-        raise ValueError("Rule 'test_domains_unique_value_across_datasets' requires 'column_1' key")
-    if reference_column not in df_reference.columns:
-        raise ValueError(f"Reference column '{reference_column}' not found in the first dataset. Available columns: {list(df_reference.columns)}")
+    if not base_column:
+        raise ValueError("Rule 'test_domains_unique_value_across_datasets' requires 'base_column' key")
+    if base_column not in df_base.columns:
+        raise ValueError(f"Reference column '{base_column}' not found in the first dataset. Available columns: {list(df_base.columns)}")
     
-    unique_values = set(df_reference[reference_column].dropna().astype(str))
+    unique_values = set(df_base[base_column].dropna().astype(str))
     if len(unique_values) != 1:
-        raise ValueError(f"Column '{reference_column}' in the first dataset must contain exactly one unique non-null value for this rule. Found values: {unique_values}")
+        raise ValueError(f"Column '{base_column}' in the first dataset must contain exactly one unique non-null value for this rule. Found values: {unique_values}")
     unique_value = unique_values.pop()
 
+    extended_columns = rule.get("extended_columns")
+    if not extended_columns:
+        raise ValueError("Rule 'test_domains_unique_value_across_datasets' requires 'extended_columns' key")
+    try:
+        if len(extended_columns) < 1:
+            raise ValueError("Parameter 'extended_columns' must containtain one or more itemns")
+    except TypeError as e:
+        raise ValueError(f"Parameter 'extended_columns' must be an array: {e}")
+
     failures = []
-    for i in range(1, len(df_list)):
-        df = df_list[i]
-        column = rule.get(f"column_{i+1}")
-        if not column:
-            raise ValueError(f"Rule 'test_domains_unique_value_across_datasets' requires 'column_{i+1}' key for dataset {i+1}")
+    for i, (df, column) in enumerate(zip(df_list[1:], extended_columns)):
         if column not in df.columns:
-            raise ValueError(f"Column '{column}' not found in dataset {i+1}. Available columns: {list(df.columns)}")
+            raise ValueError(f"Column '{column}' not found in dataset {i+2}. Available columns: {list(df.columns)}")
         
         for idx, value in df[column].items():
             if pd.isna(value):
                 continue
             if str(value) != unique_value:
-                failures.append({"row": int(idx), "column": column, "value": value, "message": f"O valor deve ser '{unique_value}' para corresponder ao valor único encontrado em '{reference_column}' no primeiro dataset"})
+                failures.append({"row": int(idx), "column": column, "value": value, "message": f"O valor deve ser '{unique_value}' para corresponder ao valor único encontrado em '{base_column}' no primeiro dataset"})
     
     return failures

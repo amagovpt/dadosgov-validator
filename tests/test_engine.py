@@ -6,6 +6,7 @@ Run with 'python -m pytest' on the root folder.
 import pandas as pd
 import pytest
 import uuid
+import json
 from app.validators.engine import run_rules
 from app.utils import redis_store
 
@@ -77,7 +78,7 @@ def test_one_to_one_columns_fails_df():
 def test_boundaries_extended_table_coherence_passes_dfs():
     return (
         pd.DataFrame({
-            "BaseValue1": ['a', 'a', 'b', None]
+            "BaseValue": ['a', 'a', 'b', None]
         }),
         pd.DataFrame({
             "ExtendedValue1": ['a', 'b', 'b', None],
@@ -96,6 +97,43 @@ def test_boundaries_extended_table_coherence_fails_dfs():
         })
     )
 
+@pytest.fixture
+def test_domains_only_one_value_across_datasets_passes_dfs():
+        return (
+        pd.DataFrame({
+            "BaseValue": ['a', 'a', 'a', None]
+        }),
+        pd.DataFrame({
+            "ExtendedValue1": ['a', None, 'a'],
+            "ExtendedValue2": ['a', 'a', None]
+        })
+    )
+
+@pytest.fixture
+def test_domains_only_one_value_across_datasets_fails_1_dfs():
+    return (
+        pd.DataFrame({
+            "BaseValue": ['a', 'a', 'b', None]
+        }),
+        pd.DataFrame({
+            "ExtendedValue1": ['a', None, 'a'],
+            "ExtendedValue2": ['a', 'a', None]
+        })
+    )
+
+@pytest.fixture
+def test_domains_only_one_value_across_datasets_fails_2_dfs():
+    return (
+        pd.DataFrame({
+            "BaseValue": ['a', 'a', 'a', None]
+        }),
+        pd.DataFrame({
+            "ExtendedValue1": ['a', None, 'a'],
+            "ExtendedValue2": ['a', 'b', None]
+        })
+    )
+
+
 # -------------------- TEST NOT NULL --------------------
 def test_not_null_passes(test_not_null_df):
     df_id = f"dataframe_{str(uuid.uuid4())}"
@@ -105,8 +143,8 @@ def test_not_null_passes(test_not_null_df):
     report = run_rules({df_id: test_not_null_df}, rules)
     redis_store.delete_dataframe(df_id)
 
-    assert report["passed"] == 1
-    assert report["failed"] == 0
+    assert report["passed"] == 1, json.dumps(report, indent=4)
+    assert report["failed"] == 0, json.dumps(report, indent=4)
 
 def test_not_null_fails(test_not_null_df):
     df_id = f"dataframe_{str(uuid.uuid4())}"
@@ -116,8 +154,8 @@ def test_not_null_fails(test_not_null_df):
     report = run_rules({df_id: test_not_null_df}, rules)
     redis_store.delete_dataframe(df_id)
     
-    assert report["failed"] == 1
-    assert report["results"][0]["failures"][0]["row"] == 2
+    assert report["failed"] == 1, json.dumps(report, indent=4)
+    assert report["results"][0]["failures"][0]["row"] == 2, json.dumps(report, indent=4)
 
 # -------------------- TEST UNIQUE GENERIC --------------------
 def test_unique_generic_passes_1(test_unique_generic_df):
@@ -128,8 +166,8 @@ def test_unique_generic_passes_1(test_unique_generic_df):
     report = run_rules({df_id: test_unique_generic_df}, rules)
     redis_store.delete_dataframe(df_id)
     
-    assert report["passed"] == 1
-    assert report["failed"] == 0
+    assert report["passed"] == 1, json.dumps(report, indent=4)
+    assert report["failed"] == 0, json.dumps(report, indent=4)
 
 def test_unique_generic_passes_2(test_unique_generic_df):
     df_id = f"dataframe_{str(uuid.uuid4())}"
@@ -139,8 +177,8 @@ def test_unique_generic_passes_2(test_unique_generic_df):
     report = run_rules({df_id: test_unique_generic_df}, rules)
     redis_store.delete_dataframe(df_id)
     
-    assert report["passed"] == 1
-    assert report["failed"] == 0
+    assert report["passed"] == 1, json.dumps(report, indent=4)
+    assert report["failed"] == 0, json.dumps(report, indent=4)
 
 def test_unique_generic_fails(test_unique_generic_df):
     df_id = f"dataframe_{str(uuid.uuid4())}"
@@ -150,8 +188,8 @@ def test_unique_generic_fails(test_unique_generic_df):
     report = run_rules({df_id: test_unique_generic_df}, rules)
     redis_store.delete_dataframe(df_id)
     
-    assert report["failed"] == 1
-    assert len(report["results"][0]["failures"]) == 4
+    assert report["failed"] == 1, json.dumps(report, indent=4)
+    assert len(report["results"][0]["failures"]) == 4, json.dumps(report, indent=4)
 
 # -------------------- TEST LENGTH MAX --------------------
 def test_length_max_passes(test_generic_length_df):
@@ -165,8 +203,8 @@ def test_length_max_passes(test_generic_length_df):
     report = run_rules({df_id: test_generic_length_df}, rules)
     redis_store.delete_dataframe(df_id)
 
-    assert report["passed"] == 2
-    assert report["failed"] == 0
+    assert report["passed"] == 2, json.dumps(report, indent=4)
+    assert report["failed"] == 0, json.dumps(report, indent=4)
 
 def test_length_max_fails(test_generic_length_df):
     df_id = f"dataframe_{str(uuid.uuid4())}"
@@ -179,10 +217,10 @@ def test_length_max_fails(test_generic_length_df):
     report = run_rules({df_id: test_generic_length_df}, rules)
     redis_store.delete_dataframe(df_id)
 
-    assert report["passed"] == 0
-    assert report["failed"] == 2
-    assert len(report["results"][0]["failures"]) == 2
-    assert len(report["results"][1]["failures"]) == 2
+    assert report["passed"] == 0, json.dumps(report, indent=4)
+    assert report["failed"] == 2, json.dumps(report, indent=4)
+    assert len(report["results"][0]["failures"]) == 2, json.dumps(report, indent=4)
+    assert len(report["results"][1]["failures"]) == 2, json.dumps(report, indent=4)
 
 # -------------------- TEST LENGTH MIN --------------------
 def test_length_min_passes(test_generic_length_df):
@@ -196,8 +234,8 @@ def test_length_min_passes(test_generic_length_df):
     report = run_rules({df_id: test_generic_length_df}, rules)
     redis_store.delete_dataframe(df_id)
 
-    assert report["passed"] == 2
-    assert report["failed"] == 0
+    assert report["passed"] == 2, json.dumps(report, indent=4)
+    assert report["failed"] == 0, json.dumps(report, indent=4)
 
 def test_length_min_fails(test_generic_length_df):
     df_id = f"dataframe_{str(uuid.uuid4())}"
@@ -210,10 +248,10 @@ def test_length_min_fails(test_generic_length_df):
     report = run_rules({df_id: test_generic_length_df}, rules)
     redis_store.delete_dataframe(df_id)
 
-    assert report["passed"] == 0
-    assert report["failed"] == 2
-    assert len(report["results"][0]["failures"]) == 1
-    assert len(report["results"][1]["failures"]) == 3
+    assert report["passed"] == 0, json.dumps(report, indent=4)
+    assert report["failed"] == 2, json.dumps(report, indent=4)
+    assert len(report["results"][0]["failures"]) == 1, json.dumps(report, indent=4)
+    assert len(report["results"][1]["failures"]) == 3, json.dumps(report, indent=4)
 
 # -------------------- TEST LENGTH EXACT --------------------
 def test_length_exact_passes(test_length_exact_df):
@@ -227,8 +265,8 @@ def test_length_exact_passes(test_length_exact_df):
     report = run_rules({df_id: test_length_exact_df}, rules)
     redis_store.delete_dataframe(df_id)
 
-    assert report["passed"] == 2
-    assert report["failed"] == 0
+    assert report["passed"] == 2, json.dumps(report, indent=4)
+    assert report["failed"] == 0, json.dumps(report, indent=4)
 
 def test_length_exact_fails(test_length_exact_df):
     df_id = f"dataframe_{str(uuid.uuid4())}"
@@ -241,10 +279,10 @@ def test_length_exact_fails(test_length_exact_df):
     report = run_rules({df_id: test_length_exact_df}, rules)
     redis_store.delete_dataframe(df_id)
 
-    assert report["passed"] == 0
-    assert report["failed"] == 2
-    assert len(report["results"][0]["failures"]) == 3
-    assert len(report["results"][1]["failures"]) == 4
+    assert report["passed"] == 0, json.dumps(report, indent=4)
+    assert report["failed"] == 2, json.dumps(report, indent=4)
+    assert len(report["results"][0]["failures"]) == 3, json.dumps(report, indent=4)
+    assert len(report["results"][1]["failures"]) == 4, json.dumps(report, indent=4)
 
 # -------------------- TEST POSSIBLE VALUES --------------------
 def test_possible_values_passes(test_possible_values_df):
@@ -255,8 +293,8 @@ def test_possible_values_passes(test_possible_values_df):
     report = run_rules({df_id: test_possible_values_df}, rules)
     redis_store.delete_dataframe(df_id)
 
-    assert report["passed"] == 1
-    assert report["failed"] == 0
+    assert report["passed"] == 1, json.dumps(report, indent=4)
+    assert report["failed"] == 0, json.dumps(report, indent=4)
 
 def test_possible_values_fails(test_possible_values_df):
     df_id = f"dataframe_{str(uuid.uuid4())}"
@@ -266,8 +304,8 @@ def test_possible_values_fails(test_possible_values_df):
     report = run_rules({df_id: test_possible_values_df}, rules)
     redis_store.delete_dataframe(df_id)
     
-    assert report["failed"] == 1
-    assert len(report["results"][0]["failures"]) == 2
+    assert report["failed"] == 1, json.dumps(report, indent=4)
+    assert len(report["results"][0]["failures"]) == 2, json.dumps(report, indent=4)
 
 # -------------------- TEST PERCENTAGE MAX DECIMAL PLACES --------------------
 def test_percentage_max_decimal_places_passes(test_percentage_max_decimal_places_df):
@@ -278,8 +316,8 @@ def test_percentage_max_decimal_places_passes(test_percentage_max_decimal_places
     report = run_rules({df_id: test_percentage_max_decimal_places_df}, rules)
     redis_store.delete_dataframe(df_id)
     
-    assert report["passed"] == 1
-    assert report["failed"] == 0
+    assert report["passed"] == 1, json.dumps(report, indent=4)
+    assert report["failed"] == 0, json.dumps(report, indent=4)
 
 def test_percentage_max_decimal_places_fails(test_percentage_max_decimal_places_df):
     df_id = f"dataframe_{str(uuid.uuid4())}"
@@ -289,8 +327,8 @@ def test_percentage_max_decimal_places_fails(test_percentage_max_decimal_places_
     report = run_rules({df_id: test_percentage_max_decimal_places_df}, rules)
     redis_store.delete_dataframe(df_id)
     
-    assert report["failed"] == 1
-    assert len(report["results"][0]["failures"]) == 2
+    assert report["failed"] == 1, json.dumps(report, indent=4)
+    assert len(report["results"][0]["failures"]) == 2, json.dumps(report, indent=4)
 
 # -------------------- TEST DOMAINS NUMERIC --------------------
 def test_domains_numeric_passes_1(test_domains_numeric_df):
@@ -301,8 +339,8 @@ def test_domains_numeric_passes_1(test_domains_numeric_df):
     report = run_rules({df_id: test_domains_numeric_df}, rules)
     redis_store.delete_dataframe(df_id)
     
-    assert report["passed"] == 1
-    assert report["failed"] == 0
+    assert report["passed"] == 1, json.dumps(report, indent=4)
+    assert report["failed"] == 0, json.dumps(report, indent=4)
 
 def test_domains_numeric_passes_2(test_domains_numeric_df):
     df_id = f"dataframe_{str(uuid.uuid4())}"
@@ -312,8 +350,8 @@ def test_domains_numeric_passes_2(test_domains_numeric_df):
     report = run_rules({df_id: test_domains_numeric_df}, rules)
     redis_store.delete_dataframe(df_id)
     
-    assert report["passed"] == 1
-    assert report["failed"] == 0
+    assert report["passed"] == 1, json.dumps(report, indent=4)
+    assert report["failed"] == 0, json.dumps(report, indent=4)
 
 def test_domains_numeric_passes_3(test_domains_numeric_df):
     df_id = f"dataframe_{str(uuid.uuid4())}"
@@ -323,8 +361,8 @@ def test_domains_numeric_passes_3(test_domains_numeric_df):
     report = run_rules({df_id: test_domains_numeric_df}, rules)
     redis_store.delete_dataframe(df_id)
     
-    assert report["passed"] == 1
-    assert report["failed"] == 0
+    assert report["passed"] == 1, json.dumps(report, indent=4)
+    assert report["failed"] == 0, json.dumps(report, indent=4)
 
 def test_domains_numeric_fails_1(test_domains_numeric_df):
     df_id = f"dataframe_{str(uuid.uuid4())}"
@@ -334,8 +372,8 @@ def test_domains_numeric_fails_1(test_domains_numeric_df):
     report = run_rules({df_id: test_domains_numeric_df}, rules)
     redis_store.delete_dataframe(df_id)
 
-    assert report["failed"] == 1
-    assert len(report["results"][0]["failures"]) == 1
+    assert report["failed"] == 1, json.dumps(report, indent=4)
+    assert len(report["results"][0]["failures"]) == 1, json.dumps(report, indent=4)
 
 def test_domains_numeric_fails_2(test_domains_numeric_df):
     df_id = f"dataframe_{str(uuid.uuid4())}"
@@ -345,8 +383,8 @@ def test_domains_numeric_fails_2(test_domains_numeric_df):
     report = run_rules({df_id: test_domains_numeric_df}, rules)
     redis_store.delete_dataframe(df_id)
 
-    assert report["failed"] == 1
-    assert len(report["results"][0]["failures"]) == 2
+    assert report["failed"] == 1, json.dumps(report, indent=4)
+    assert len(report["results"][0]["failures"]) == 2, json.dumps(report, indent=4)
 
 def test_domains_numeric_fails_3(test_domains_numeric_df):
     df_id = f"dataframe_{str(uuid.uuid4())}"
@@ -356,8 +394,8 @@ def test_domains_numeric_fails_3(test_domains_numeric_df):
     report = run_rules({df_id: test_domains_numeric_df}, rules)
     redis_store.delete_dataframe(df_id)
 
-    assert report["failed"] == 1
-    assert len(report["results"][0]["failures"]) == 3
+    assert report["failed"] == 1, json.dumps(report, indent=4)
+    assert len(report["results"][0]["failures"]) == 3, json.dumps(report, indent=4)
 
 # -------------------- TEST ONE TO ONE COLUMNS --------------------
 def test_one_to_one_columns_passes(test_one_to_one_columns_passes_df):
@@ -368,8 +406,8 @@ def test_one_to_one_columns_passes(test_one_to_one_columns_passes_df):
     report = run_rules({df_id: test_one_to_one_columns_passes_df}, rules)
     redis_store.delete_dataframe(df_id)
 
-    assert report["passed"] == 1
-    assert report["failed"] == 0
+    assert report["passed"] == 1, json.dumps(report, indent=4)
+    assert report["failed"] == 0, json.dumps(report, indent=4)
 
 def test_one_to_one_columns_fails(test_one_to_one_columns_fails_df):
     df_id = f"dataframe_{str(uuid.uuid4())}"
@@ -379,8 +417,8 @@ def test_one_to_one_columns_fails(test_one_to_one_columns_fails_df):
     report = run_rules({df_id: test_one_to_one_columns_fails_df}, rules)
     redis_store.delete_dataframe(df_id)
 
-    assert report["passed"] == 0
-    assert report["failed"] == 1
+    assert report["passed"] == 0, json.dumps(report, indent=4)
+    assert report["failed"] == 1, json.dumps(report, indent=4)
 
 # -------------------- TEST BOUNDARIES EXTENDED TABLE COHERENCE --------------------
 def test_boundaries_extended_table_coherence_passes(test_boundaries_extended_table_coherence_passes_dfs):
@@ -393,13 +431,13 @@ def test_boundaries_extended_table_coherence_passes(test_boundaries_extended_tab
         {
             "dataframe_ids": [df_base_id, df_extended_id], 
             "type": "test_boundaries_extended_table_coherence", 
-            "base_column": "BaseValue1", 
+            "base_column": "BaseValue", 
             "extended_column": "ExtendedValue1"
         },
         {
             "dataframe_ids": [df_base_id, df_extended_id], 
             "type": "test_boundaries_extended_table_coherence", 
-            "base_column": "BaseValue1", 
+            "base_column": "BaseValue", 
             "extended_column": "ExtendedValue2"
         }
     ]
@@ -411,8 +449,8 @@ def test_boundaries_extended_table_coherence_passes(test_boundaries_extended_tab
     redis_store.delete_dataframe(df_base_id)
     redis_store.delete_dataframe(df_extended_id)
 
-    assert report["passed"] == 2
-    assert report["failed"] == 0
+    assert report["passed"] == 2, json.dumps(report, indent=4)
+    assert report["failed"] == 0, json.dumps(report, indent=4)
 
 def test_boundaries_extended_table_coherence_fails(test_boundaries_extended_table_coherence_fails_dfs):
     df_base_id = f"dataframe_{str(uuid.uuid4())}"
@@ -436,5 +474,84 @@ def test_boundaries_extended_table_coherence_fails(test_boundaries_extended_tabl
     redis_store.delete_dataframe(df_base_id)
     redis_store.delete_dataframe(df_extended_id)
 
-    assert report["passed"] == 0
-    assert report["failed"] == 1
+    assert report["passed"] == 0, json.dumps(report, indent=4)
+    assert report["failed"] == 1, json.dumps(report, indent=4)
+
+# -------------------- TEST DOMAINS ONLY ONE VALUE ACCROSS DATASETS --------------------
+def test_domains_only_one_value_across_datasets_passes(test_domains_only_one_value_across_datasets_passes_dfs):
+    df_base_id = f"dataframe_{str(uuid.uuid4())}"
+    df_extended_id = f"dataframe_{str(uuid.uuid4())}"
+    redis_store.save_dataframe(df_base_id, test_domains_only_one_value_across_datasets_passes_dfs[0])
+    redis_store.save_dataframe(df_extended_id, test_domains_only_one_value_across_datasets_passes_dfs[1])
+
+    # Using the same extended DataFrame twice
+    rules = [
+        {
+            "dataframe_ids": [df_base_id, df_extended_id, df_extended_id],
+            "type": "test_domains_only_one_value_across_datasets",
+            "base_column": "BaseValue",
+            "extended_columns": ["ExtendedValue1", "ExtendedValue2"]
+        }
+    ]
+    df_store = {
+        df_base_id: test_domains_only_one_value_across_datasets_passes_dfs[0], 
+        df_extended_id: test_domains_only_one_value_across_datasets_passes_dfs[1]
+    }
+    report = run_rules(df_store, rules)
+    redis_store.delete_dataframe(df_base_id)
+    redis_store.delete_dataframe(df_extended_id)
+
+    assert report["passed"] == 1, json.dumps(report, indent=4)
+    assert report["failed"] == 0, json.dumps(report, indent=4)
+
+def test_domains_only_one_value_across_datasets_fails_1(test_domains_only_one_value_across_datasets_fails_1_dfs):
+    df_base_id = f"dataframe_{str(uuid.uuid4())}"
+    df_extended_id = f"dataframe_{str(uuid.uuid4())}"
+    redis_store.save_dataframe(df_base_id, test_domains_only_one_value_across_datasets_fails_1_dfs[0])
+    redis_store.save_dataframe(df_extended_id, test_domains_only_one_value_across_datasets_fails_1_dfs[1])
+
+    # Using the same extended DataFrame twice
+    rules = [
+        {
+            "dataframe_ids": [df_base_id, df_extended_id, df_extended_id],
+            "type": "test_domains_only_one_value_across_datasets",
+            "base_column": "BaseValue",
+            "extended_columns": ["ExtendedValue1", "ExtendedValue2"]
+        }
+    ]
+    df_store = {
+        df_base_id: test_domains_only_one_value_across_datasets_fails_1_dfs[0], 
+        df_extended_id: test_domains_only_one_value_across_datasets_fails_1_dfs[1]
+    }
+    report = run_rules(df_store, rules)
+    redis_store.delete_dataframe(df_base_id)
+    redis_store.delete_dataframe(df_extended_id)
+
+    assert report["passed"] == 0, json.dumps(report, indent=4)
+    assert report["failed"] == 1, json.dumps(report, indent=4)
+
+def test_domains_only_one_value_across_datasets_fails_1(test_domains_only_one_value_across_datasets_fails_2_dfs):
+    df_base_id = f"dataframe_{str(uuid.uuid4())}"
+    df_extended_id = f"dataframe_{str(uuid.uuid4())}"
+    redis_store.save_dataframe(df_base_id, test_domains_only_one_value_across_datasets_fails_2_dfs[0])
+    redis_store.save_dataframe(df_extended_id, test_domains_only_one_value_across_datasets_fails_2_dfs[1])
+
+    # Using the same extended DataFrame twice
+    rules = [
+        {
+            "dataframe_ids": [df_base_id, df_extended_id, df_extended_id],
+            "type": "test_domains_only_one_value_across_datasets",
+            "base_column": "BaseValue",
+            "extended_columns": ["ExtendedValue1", "ExtendedValue2"]
+        }
+    ]
+    df_store = {
+        df_base_id: test_domains_only_one_value_across_datasets_fails_2_dfs[0], 
+        df_extended_id: test_domains_only_one_value_across_datasets_fails_2_dfs[1]
+    }
+    report = run_rules(df_store, rules)
+    redis_store.delete_dataframe(df_base_id)
+    redis_store.delete_dataframe(df_extended_id)
+
+    assert report["passed"] == 0, json.dumps(report, indent=4)
+    assert report["failed"] == 1, json.dumps(report, indent=4)
