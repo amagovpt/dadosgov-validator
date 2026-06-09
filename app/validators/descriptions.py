@@ -197,12 +197,12 @@ RULE_DESCRIPTIONS = {
                         "required": True
                     },
                     "min_value": {
-                        "type": "number",
+                        "type": "numeric",
                         "description": "O valor mínimo permitido",
                         "required": False
                     },
                     "max_value": {
-                        "type": "number",
+                        "type": "numeric",
                         "description": "O valor máximo permitido",
                         "required": False
                     }
@@ -265,7 +265,7 @@ RULE_DESCRIPTIONS = {
         {
             "id": "test_domains_only_one_value_across_datasets",
             "display_name": "Somente um valor entre datasets",
-            "description": "Valida que o priemiro dataset contêm somente um valor na coluna de referência, e todos os datasets a seguir contêm apenas esse valor nas colunas especificadas.",
+            "description": "Valida que o primeiro dataset contêm somente um valor na coluna de referência, e todos os datasets a seguir contêm apenas esse valor nas colunas especificadas.",
             "parameters": {
                 "dataset_parameters": {
                     "min_datasets": 2,
@@ -352,6 +352,32 @@ RULE_DESCRIPTIONS = {
                     "column": {
                         "type": "string",
                         "description": "O nome da coluna a ser validada",
+                        "required": True
+                    }
+                }
+            }
+        },
+        {
+            "id": "test_boundaries_sum_equals",
+            "display_name": "Soma dos valores igual a um valor específico",
+            "description": "Verifica se a soma dos valores em uma coluna numérica é igual a um valor específico, o que pode ser útil para validar distribuições de porcentagens ou proporções.",
+            "parameters": {
+                "dataset_parameters": {
+                    "min_datasets": 1,
+                    "max_datasets": 1,
+                    "dataset_descriptions": {
+                        "dataset1": "O dataset que contém a coluna a ser validada"
+                    }
+                },
+                "validation_parameters": {
+                    "column": {
+                        "type": "string",
+                        "description": "O nome da coluna a ser validada",
+                        "required": True
+                    },
+                    "value": {
+                        "type": "numeric",
+                        "description": "O valor específico que a soma dos valores na coluna deve igualar",
                         "required": True
                     }
                 }
