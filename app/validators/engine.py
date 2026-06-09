@@ -31,7 +31,10 @@ from app.validators.rules import (
     test_one_to_one_columns,
     test_boundaries_extended_table_coherence,
     test_domains_only_one_value_across_datasets,
-    test_format_no_leading_whitespace
+    test_format_no_leading_whitespace,
+    test_domains_not_zero,
+    test_boundaries_not_all_values_the_same,
+    test_boundaries_sum_equals
 )
 
 # Maps rule type strings to validator functions
@@ -48,7 +51,10 @@ RULE_REGISTRY: dict = {
     'test_one_to_one_columns': test_one_to_one_columns,
     'test_boundaries_extended_table_coherence': test_boundaries_extended_table_coherence,
     'test_domains_only_one_value_across_datasets': test_domains_only_one_value_across_datasets,
-    'test_format_no_leading_whitespace': test_format_no_leading_whitespace
+    'test_format_no_leading_whitespace': test_format_no_leading_whitespace,
+    'test_domains_not_zero': test_domains_not_zero,
+    'test_boundaries_not_all_values_the_same': test_boundaries_not_all_values_the_same,
+    'test_boundaries_sum_equals': test_boundaries_sum_equals
 }
 
 
@@ -91,7 +97,7 @@ def run_rules(df_store: dict[str, pd.DataFrame], rules: list) -> dict:
             results.append({
                 "rule": rule,
                 "passed": len(failures) == 0,
-                "failures": failures
+                "failures": [f.to_dict() for f in failures]
             })
         except Exception as e:
             results.append({

@@ -151,6 +151,54 @@ def test_format_no_leading_whitespace_fails_2_df():
         "Value": [" a", "\tb", "c", None]
     })
 
+@pytest.fixture
+def test_domain_not_zero_passes_df():
+    return pd.DataFrame({
+        "Value": ['abc', 1, 4, None]
+    })
+
+@pytest.fixture
+def test_domain_not_zero_fails_1_df():
+    return pd.DataFrame({
+        "Value": ['abc', 1, '0.0', None]
+    })
+
+@pytest.fixture
+def test_domain_not_zero_fails_2_df():
+    return pd.DataFrame({
+        "Value": ['abc', 1, 0, None]
+    })
+
+@pytest.fixture
+def test_boundaries_not_all_values_the_same_passes_df():
+    return pd.DataFrame({
+        "Value": ['a', 'b', None, 'b']
+    })
+
+@pytest.fixture
+def test_boundaries_not_all_values_the_same_fails_df():
+    return pd.DataFrame({
+        "Value": ['b', 'b', None, 'b']
+    })
+
+@pytest.fixture
+def test_boundaries_sum_equals_passes_df():
+    return pd.DataFrame({
+        "Value": [10, 20, 10, None, 10]
+    })
+
+@pytest.fixture
+def test_boundaries_sum_equals_fails_1_df():
+    return pd.DataFrame({
+        "Value": ['a', 10, 20, None, 10]
+    })
+
+@pytest.fixture
+def test_boundaries_sum_equals_fails_2_df():
+    return pd.DataFrame({
+        "Value": [10, 20, 10, None, 10]
+    })
+
 # -------------------- TEST NOT NULL --------------------
 def test_not_null_passes(test_not_null_df):
     df_id = f"dataframe_{str(uuid.uuid4())}"
@@ -628,3 +676,152 @@ def test_format_no_leading_whitespace_fails_2(test_format_no_leading_whitespace_
     assert report["passed"] == 0, json.dumps(report, indent=4)
     assert report["failed"] == 1, json.dumps(report, indent=4)
 
+# -------------------- TEST FORMAT NOT ZERO --------------------
+def test_domain_not_zero_passes(test_domain_not_zero_passes_df):
+    df_id = f"dataframe_{str(uuid.uuid4())}"
+    redis_store.save_dataframe(df_id, test_domain_not_zero_passes_df)
+
+    rules = [
+        {
+            "dataframe_ids": [df_id],
+            "type": "test_domains_not_zero",
+            "column": "Value"
+        }
+    ]
+    df_store = {df_id: test_domain_not_zero_passes_df}
+    report = run_rules(df_store, rules)
+    redis_store.delete_dataframe(df_id)
+
+    assert report["passed"] == 1, json.dumps(report, indent=4)
+    assert report["failed"] == 0, json.dumps(report, indent=4)
+
+def test_domain_not_zero_fails_1(test_domain_not_zero_fails_1_df):
+    df_id = f"dataframe_{str(uuid.uuid4())}"
+    redis_store.save_dataframe(df_id, test_domain_not_zero_fails_1_df)
+
+    rules = [
+        {
+            "dataframe_ids": [df_id],
+            "type": "test_domains_not_zero",
+            "column": "Value"
+        }
+    ]
+    df_store = {df_id: test_domain_not_zero_fails_1_df}
+    report = run_rules(df_store, rules)
+    redis_store.delete_dataframe(df_id)
+
+    assert report["passed"] == 0, json.dumps(report, indent=4)
+    assert report["failed"] == 1, json.dumps(report, indent=4)
+
+def test_domain_not_zero_fails_2(test_domain_not_zero_fails_2_df):
+    df_id = f"dataframe_{str(uuid.uuid4())}"
+    redis_store.save_dataframe(df_id, test_domain_not_zero_fails_2_df)
+
+    rules = [
+        {
+            "dataframe_ids": [df_id],
+            "type": "test_domains_not_zero",
+            "column": "Value"
+        }
+    ]
+    df_store = {df_id: test_domain_not_zero_fails_2_df}
+    report = run_rules(df_store, rules)
+    redis_store.delete_dataframe(df_id)
+
+    assert report["passed"] == 0, json.dumps(report, indent=4)
+    assert report["failed"] == 1, json.dumps(report, indent=4)
+
+# -------------------- TEST BOUNDARIES NOT ALL VALUES THE SAME --------------------
+def test_boundaries_not_all_values_the_same_passes(test_boundaries_not_all_values_the_same_passes_df):
+    df_id = f"dataframe_{str(uuid.uuid4())}"
+    redis_store.save_dataframe(df_id, test_boundaries_not_all_values_the_same_passes_df)
+
+    rules = [
+        {
+            "dataframe_ids": [df_id],
+            "type": "test_boundaries_not_all_values_the_same",
+            "column": "Value"
+        }
+    ]
+    df_store = {df_id: test_boundaries_not_all_values_the_same_passes_df}
+    report = run_rules(df_store, rules)
+    redis_store.delete_dataframe(df_id)
+
+    assert report["passed"] == 1, json.dumps(report, indent=4)
+    assert report["failed"] == 0, json.dumps(report, indent=4)
+
+def test_boundaries_not_all_values_the_same_passes(test_boundaries_not_all_values_the_same_fails_df):
+    df_id = f"dataframe_{str(uuid.uuid4())}"
+    redis_store.save_dataframe(df_id, test_boundaries_not_all_values_the_same_fails_df)
+
+    rules = [
+        {
+            "dataframe_ids": [df_id],
+            "type": "test_boundaries_not_all_values_the_same",
+            "column": "Value"
+        }
+    ]
+    df_store = {df_id: test_boundaries_not_all_values_the_same_fails_df}
+    report = run_rules(df_store, rules)
+    redis_store.delete_dataframe(df_id)
+
+    assert report["passed"] == 0, json.dumps(report, indent=4)
+    assert report["failed"] == 1, json.dumps(report, indent=4)
+
+# -------------------- TEST BOUNDARIES SUM EQUALS --------------------
+def test_boundaries_sum_equals_passes(test_boundaries_sum_equals_passes_df):
+    df_id = f"dataframe_{str(uuid.uuid4())}"
+    redis_store.save_dataframe(df_id, test_boundaries_sum_equals_passes_df)
+
+    rules = [
+        {
+            "dataframe_ids": [df_id],
+            "type": "test_boundaries_sum_equals",
+            "column": "Value",
+            "value": 50
+        }
+    ]
+    df_store = {df_id: test_boundaries_sum_equals_passes_df}
+    report = run_rules(df_store, rules)
+    redis_store.delete_dataframe(df_id)
+
+    assert report["passed"] == 1, json.dumps(report, indent=4)
+    assert report["failed"] == 0, json.dumps(report, indent=4)
+
+def test_boundaries_sum_equals_fails_1(test_boundaries_sum_equals_fails_1_df):
+    df_id = f"dataframe_{str(uuid.uuid4())}"
+    redis_store.save_dataframe(df_id, test_boundaries_sum_equals_fails_1_df)
+
+    rules = [
+        {
+            "dataframe_ids": [df_id],
+            "type": "test_boundaries_sum_equals",
+            "column": "Value",
+            "value": 50
+        }
+    ]
+    df_store = {df_id: test_boundaries_sum_equals_fails_1_df}
+    report = run_rules(df_store, rules)
+    redis_store.delete_dataframe(df_id)
+
+    assert report["passed"] == 0, json.dumps(report, indent=4)
+    assert report["failed"] == 1, json.dumps(report, indent=4)
+
+def test_boundaries_sum_equals_fails_2(test_boundaries_sum_equals_fails_2_df):
+    df_id = f"dataframe_{str(uuid.uuid4())}"
+    redis_store.save_dataframe(df_id, test_boundaries_sum_equals_fails_2_df)
+
+    rules = [
+        {
+            "dataframe_ids": [df_id],
+            "type": "test_boundaries_sum_equals",
+            "column": "Value",
+            "value": 100
+        }
+    ]
+    df_store = {df_id: test_boundaries_sum_equals_fails_2_df}
+    report = run_rules(df_store, rules)
+    redis_store.delete_dataframe(df_id)
+
+    assert report["passed"] == 0, json.dumps(report, indent=4)
+    assert report["failed"] == 1, json.dumps(report, indent=4)

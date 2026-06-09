@@ -314,6 +314,48 @@ RULE_DESCRIPTIONS = {
                     }
                 }
             }
+        },
+        {
+            "id": "test_domains_not_zero",
+            "display_name": "Nenhum valor igual a zero",
+            "description": "Verifica se nenhum dos valores em uma coluna específica é igual a zero",
+            "parameters": {
+                "dataset_parameters": {
+                    "min_datasets": 1,
+                    "max_datasets": 1,
+                    "dataset_descriptions": {
+                        "dataset1": "O dataset que contém a coluna a ser validada"
+                    }
+                },
+                "validation_parameters": {
+                    "column": {
+                        "type": "string",
+                        "description": "O nome da coluna a ser validada",
+                        "required": True
+                    }
+                }
+            }
+        },
+        {
+            "id": "test_boundaries_not_all_values_the_same",
+            "display_name": "Mais de um valor na coluna",
+            "description": "Verifica se existe mais de um valor distinto na coluna, e falha caso seja somente um",
+            "parameters": {
+                "dataset_parameters": {
+                    "min_datasets": 1,
+                    "max_datasets": 1,
+                    "dataset_descriptions": {
+                        "dataset1": "O dataset que contém a coluna a ser validada"
+                    }
+                },
+                "validation_parameters": {
+                    "column": {
+                        "type": "string",
+                        "description": "O nome da coluna a ser validada",
+                        "required": True
+                    }
+                }
+            }
         }
     ]
 }

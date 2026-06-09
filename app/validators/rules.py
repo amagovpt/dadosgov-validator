@@ -16,9 +16,21 @@ Failure dict shape (customise as needed):
 """
 
 import pandas as pd
+from dataclasses import dataclass
 
 
 # --- Helpers ---
+
+@dataclass
+class FailureMessage:
+    row: int = None
+    column: str = None
+    value: str = None
+    message: str = None
+
+    def to_dict(self):
+        return {"row": self.row, "column": self.column, "value": self.value, "message": self.message}
+
 
 def _require_column(df: pd.DataFrame, rule: dict) -> str:
     """Extracts and validates the 'column' key from a rule dict."""
@@ -40,7 +52,7 @@ def test_not_null(df_list: list, rule: dict) -> list:
     failures = []
     for idx, value in df[column].items():
         if pd.isna(value):
-            failures.append({"row": int(idx), "column": column, "value": None, "message": "O valor é nulo/vazio"})
+            failures.append(FailureMessage(row=int(idx), column=column, value=None, message="O valor é nulo/vazio"))
 
     return failures
 
@@ -55,10 +67,10 @@ def test_unique_generic(df_list: list, rule: dict) -> list:
     duplicates = df[df[columns].duplicated(keep=False)]
     failures = []
     for idx, row in duplicates.iterrows():
-        failures.append({
-            "row": int(idx), "column": ", ".join(columns), "value": row[columns].to_dict(),
-            "message": f"Valor(es) duplicados na(s) coluna(s): {columns}"
-        })
+        failures.append(FailureMessage(
+            row=int(idx), column=", ".join(columns), value=row[columns].to_dict(),
+            message=f"Valor(es) duplicados na(s) coluna(s): {columns}"
+        ))
 
     return failures
 
@@ -107,9 +119,9 @@ def test_length_max(df_list: list, rule: dict) -> list:
                 text_value = str(value)
 
             if len(text_value) > max_length:
-                failures.append({"row": int(idx), "column": column, "value": value, "message": f"O valor excede o comprimento máximo de {max_length}"})
+                failures.append(FailureMessage(row=int(idx), column=column, value=value, message=f"O valor excede o comprimento máximo de {max_length}"))
         except Exception as e:
-            failures.append({"row": int(idx), "column": column, "value": value, "message": f"Erro ao processar o valor: {e}"})
+            failures.append(FailureMessage(row=int(idx), column=column, value=value, message=f"Erro ao processar o valor: {e}"))
 
     return failures
 
@@ -158,9 +170,9 @@ def test_length_min(df_list: list, rule: dict) -> list:
                 text_value = str(value)
 
             if len(text_value) < min_length:
-                failures.append({"row": int(idx), "column": column, "value": value, "message": f"O valor é menor que o comprimento mínimo de {min_length}"})
+                failures.append(FailureMessage(row=int(idx), column=column, value=value, message=f"O valor é menor que o comprimento mínimo de {min_length}"))
         except Exception as e:
-            failures.append({"row": int(idx), "column": column, "value": value, "message": f"Erro ao processar o valor: {e}"})
+            failures.append(FailureMessage(row=int(idx), column=column, value=value, message=f"Erro ao processar o valor: {e}"))
 
     return failures
 
@@ -209,9 +221,9 @@ def test_length_exact(df_list: list, rule: dict) -> list:
                 text_value = str(value)
 
             if len(text_value) != exact_length:
-                failures.append({"row": int(idx), "column": column, "value": value, "message": f"O valor não tem o comprimento exato de {exact_length}"})
+                failures.append(FailureMessage(row=int(idx), column=column, value=value, message=f"O valor não tem o comprimento exato de {exact_length}"))
         except Exception as e:
-            failures.append({"row": int(idx), "column": column, "value": value, "message": f"Erro ao processar o valor: {e}"})
+            failures.append(FailureMessage(row=int(idx), column=column, value=value, message=f"Erro ao processar o valor: {e}"))
 
     return failures
 
@@ -227,7 +239,7 @@ def test_possible_values(df_list: list, rule: dict) -> list:
     failures = []
     for idx, value in df[column].items():
         if not pd.isna(value) and str(value) not in allowed_values:
-            failures.append({"row": int(idx), "column": column, "value": value, "message": f"O valor não está no conjunto de valores permitidos"})
+            failures.append(FailureMessage(row=int(idx), column=column, value=value, message=f"O valor não está no conjunto de valores permitidos"))
     return failures
 
 def test_percentage_max_decimal_places(df_list: list, rule: dict) -> list:
@@ -253,9 +265,9 @@ def test_percentage_max_decimal_places(df_list: list, rule: dict) -> list:
         try:
             decimal_part = str(value).split(".")[1] if "." in str(value) else ""
             if len(decimal_part) > max_decimal_places:
-                failures.append({"row": int(idx), "column": column, "value": value, "message": f"O valor tem mais de {max_decimal_places} casas decimais"})
+                failures.append(FailureMessage(row=int(idx), column=column, value=value, message=f"O valor tem mais de {max_decimal_places} casas decimais"))
         except Exception as e:
-            failures.append({"row": int(idx), "column": column, "value": value, "message": f"Erro ao processar o valor: {e}"})
+            failures.append(FailureMessage(row=int(idx), column=column, value=value, message=f"Erro ao processar o valor: {e}"))
 
     return failures
 
@@ -291,9 +303,9 @@ def test_domains_numeric(df_list: list, rule: dict) -> list:
         try:
             numeric_value = float(value)
             if (min_value is not None and numeric_value < min_value) or (max_value is not None and numeric_value > max_value):
-                failures.append({"row": int(idx), "column": column, "value": value, "message": f"O valor está fora do intervalo permitido"})
+                failures.append(FailureMessage(row=int(idx), column=column, value=value, message=f"O valor está fora do intervalo permitido"))
         except Exception as e:
-            failures.append({"row": int(idx), "column": column, "value": value, "message": f"Erro ao processar o valor: {e}"})
+            failures.append(FailureMessage(row=int(idx), column=column, value=value, message=f"Erro ao processar o valor: {e}"))
 
     return failures
 
@@ -321,12 +333,12 @@ def test_one_to_one_columns(df_list: list, rule: dict) -> list:
     for value in c1_groupby[c1_groupby > 1].index:
         if pd.isna(value):
             continue
-        failures.append({"column": column1, "value": value, "message": f"O valor em '{column1}' tem múltiplos valores correspondentes em '{column2}'"})
+        failures.append(FailureMessage(column=column1, value=value, message=f"O valor em '{column1}' tem múltiplos valores correspondentes em '{column2}'"))
 
     for value in c2_groupby[c2_groupby > 1].index:
         if pd.isna(value):
             continue
-        failures.append({"column": column2, "value": value, "message": f"O valor em '{column2}' tem múltiplos valores correspondentes em '{column1}'"})
+        failures.append(FailureMessage(column=column2, value=value, message=f"O valor em '{column2}' tem múltiplos valores correspondentes em '{column1}'"))
 
     return failures
 
@@ -355,7 +367,7 @@ def test_boundaries_extended_table_coherence(df_list: list, rule: dict) -> list:
         if pd.isna(value):
             continue
         if str(value) not in extended_values:
-            failures.append({"column": base_column, "value": value, "message": f"O valor em '{base_column}' não foi encontrado no campo correspondente em '{extended_column}'"})
+            failures.append(FailureMessage(column=base_column, value=value, message=f"O valor em '{base_column}' não foi encontrado no campo correspondente em '{extended_column}'"))
     return failures
 
 def test_domains_only_one_value_across_datasets(df_list: list, rule: dict) -> list:
@@ -398,11 +410,12 @@ def test_domains_only_one_value_across_datasets(df_list: list, rule: dict) -> li
             if pd.isna(value):
                 continue
             if str(value) != unique_value:
-                failures.append({"row": int(idx), "column": column, "value": value, "message": f"O valor deve ser '{unique_value}' para corresponder ao valor único encontrado em '{base_column}' no primeiro dataset"})
+                failures.append(FailureMessage(row=int(idx), column=column, value=value, message=f"O valor deve ser '{unique_value}' para corresponder ao valor único encontrado em '{base_column}' no primeiro dataset"))
     
     return failures
 
 def test_format_no_leading_whitespace(df_list: list, rule: dict):
+    # test_domains_tabulation at the airflow project
     """
     Validates formatting issues in a text column. Fails for:
         - Values starting with an empty space
@@ -419,8 +432,90 @@ def test_format_no_leading_whitespace(df_list: list, rule: dict):
             continue
 
         if value.startswith(' '):
-            failures.append({"row": int(idx), "value": value, "message": f"O valor começa com um espaço vazio"})
+            failures.append(FailureMessage(row=int(idx), column=column, value=value, message="O valor começa com um espaço vazio"))
         elif value.startswith('\t'):
-            failures.append({"row": int(idx), "value": value, "message": f"O valor começa com uma tabulação"})
+            failures.append(FailureMessage(row=int(idx), column=column, value=value, message="O valor começa com uma tabulação"))
 
     return failures
+
+def test_domains_not_zero(df_list: list, rule: dict):
+    """
+    Fails for rows where the given column equals zero (string '0' or numeric 0).
+    Ignores null/NaN values.
+    """
+    assert len(df_list) == 1, "test_domains_not_zero expects exactly one dataset"
+    df = df_list[0]
+
+    column = _require_column(df, rule)
+    failures = []
+    for idx, value in df[column].items():
+        if pd.isna(value):
+            continue
+
+        try:
+            if float(value) == 0:
+                failures.append(FailureMessage(row=int(idx), column=column, value=value, message="O valor é igual a zero"))
+        except ValueError:
+            # Not a numeric value, thus not a failure
+            pass
+
+    return failures
+        
+def test_boundaries_not_all_values_the_same(df_list: list, rule: dict):
+    """
+    Fails if all the values in the given column are the same.
+    Ignores null/NaN values.
+    """
+    assert len(df_list) == 1, "test_domains_not_zero expects exactly one dataset"
+    df = df_list[0]
+
+    column = _require_column(df, rule)
+    unique_values = df[column].dropna().unique()
+    if len(unique_values) == 0:
+        return [FailureMessage(column=column, message=f"A coluna {column} não possui nenhum nenhum valor não nulo")]
+    elif len(unique_values) == 1:
+        return [FailureMessage(column=column, message=f"A coluna {column} possui somente um valor {unique_values[0]}")]
+
+    return []
+    
+def test_boundaries_sum_equals(df_list: list, rule: dict):
+    """
+    Fails if the sum of the values in the specified column equals the specified value.
+    Ignores null/NaN
+    """
+    assert len(df_list) == 1, "test_boundaries_sum_equals expects exactly one dataset"
+    df = df_list[0]
+
+    column = _require_column(df, rule)
+
+    value_param_str = rule.get("value")
+    if not value_param_str:
+        raise ValueError("Rule test_boundaries_sum_equals requires a 'value' key")
+    
+    try:
+        float(value_param_str)
+    except ValueError:
+        raise ValueError("The 'value' key must be numeric")
+    
+    calculated_total = 0
+    value_error_found = False
+    failures = []
+    for idx, value in df[column].items():
+        if pd.isna(value):
+            continue
+
+        try:
+            calculated_total += float(value)
+        except ValueError:
+            failures.append(FailureMessage(row=int(idx), column=column, value=value, message=f"O valor não é numérico, e portanto não é possível ser utilizado para o cálculo de soma"))
+            value_error_found = True
+
+    if value_error_found:
+        return failures
+    else:
+        rounded_total_param = round(float(value_param_str), 1)
+        rounded_total_calculated = round(calculated_total, 1)
+        if not rounded_total_param == rounded_total_calculated:
+            return [FailureMessage(column=column, value=calculated_total, message=f"O valor total informado '{rounded_total_param}' não é igual ao valor total calculado '{rounded_total_calculated}'")]
+        else:
+            return []
