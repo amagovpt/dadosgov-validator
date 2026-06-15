@@ -367,7 +367,7 @@ def test_boundaries_extended_table_coherence(df_list: list, rule: dict) -> list:
         if pd.isna(value):
             continue
         if str(value) not in extended_values:
-            failures.append(FailureMessage(column=base_column, value=value, message=f"O valor em '{base_column}' não foi encontrado no campo correspondente em '{extended_column}'"))
+            failures.append(FailureMessage(column=base_column, value=value, message=f"O valor '{str(value)}' na coluna '{base_column}' não foi encontrado no campo correspondente na coluna '{extended_column}'"))
     return failures
 
 def test_domains_only_one_value_across_datasets(df_list: list, rule: dict) -> list:

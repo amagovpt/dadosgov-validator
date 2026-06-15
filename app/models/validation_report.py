@@ -15,13 +15,12 @@ class ValidationReport(db.Model):
     status = db.Column(db.Enum(TaskStatus, native_enum=False), nullable=False, default=TaskStatus.QUEUED)
     rules_applied = db.Column(db.JSON)       # The rules list sent by the client
     report_result = db.Column(db.JSON)       # The full report dict from run_rules()
-    passed = db.Column(db.Boolean)           # Top-level pass/fail flag
     error_message = db.Column(db.Text)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now())
     completed_at = db.Column(db.DateTime)
 
     def __repr__(self):
-        return f"<ValidationReport job={self.job_id} passed={self.passed}>"
+        return f"<ValidationReport job={self.job_id} status={self.status}>"
     
     def get_result(self):
         return self.report_result

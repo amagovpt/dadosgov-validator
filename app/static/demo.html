@@ -55,7 +55,7 @@
     /* ── LAYOUT ─────────────────────────────────────────── */
     .layout {
       display: grid;
-      grid-template-columns: 360px 1fr;
+      grid-template-columns: 380px 1fr;
       gap: 0;
       min-height: calc(100vh - 61px);
     }
@@ -84,11 +84,12 @@
     .drop-zone {
       border: 1.5px dashed var(--border2);
       border-radius: 8px;
-      padding: 28px 16px;
+      padding: 22px 16px;
       text-align: center;
       cursor: pointer;
       transition: border-color .2s, background .2s;
       position: relative;
+      margin-bottom: 12px;
     }
     .drop-zone:hover, .drop-zone.drag-over {
       border-color: var(--accent);
@@ -97,30 +98,47 @@
     .drop-zone input[type="file"] {
       position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
     }
-    .drop-icon { font-size: 28px; margin-bottom: 8px; }
+    .drop-icon { font-size: 24px; margin-bottom: 6px; }
     .drop-zone p { font-size: 13px; color: var(--muted); line-height: 1.5; }
     .drop-zone p strong { color: var(--text); }
-    .file-badge {
-      display: none;
-      align-items: center;
+
+    /* ── DATASET CARDS ────────────────────────────────────── */
+    .datasets-list { display: flex; flex-direction: column; gap: 10px; }
+    .dataset-card {
+      background: var(--surface);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
       gap: 8px;
-      background: rgba(163,230,53,.08);
-      border: 1px solid rgba(163,230,53,.25);
-      border-radius: 6px;
-      padding: 8px 12px;
+      animation: slideIn .15s ease;
+    }
+    .dataset-card-head {
+      display: flex; align-items: center; gap: 8px;
+    }
+    .dataset-alias-badge {
+      font-family: var(--mono);
+      font-size: 11px; font-weight: 600;
+      color: #0d0f12;
+      background: var(--accent2);
+      border-radius: 4px;
+      padding: 2px 7px;
+      flex-shrink: 0;
+    }
+    .dataset-filename {
       font-family: var(--mono);
       font-size: 12px;
-      color: var(--accent);
-      margin-top: 12px;
-      word-break: break-all;
+      color: var(--text);
+      flex: 1; min-width: 0;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     }
-    .file-badge.show { display: flex; }
 
-    /* ── BASE URL ───────────────────────────────────────── */
+    /* ── BASE URL / INPUT GROUP ───────────────────────────── */
     .input-group { display: flex; flex-direction: column; gap: 6px; }
     .input-group label { font-size: 12px; color: var(--muted); font-family: var(--mono); }
     .input-group input, .input-group select, .input-group textarea {
-      background: var(--surface);
+      background: var(--bg);
       border: 1px solid var(--border2);
       border-radius: 6px;
       color: var(--text);
@@ -133,6 +151,9 @@
     }
     .input-group input:focus, .input-group select:focus, .input-group textarea:focus {
       border-color: var(--accent2);
+    }
+    .input-group input:disabled, .input-group select:disabled {
+      opacity: .5; cursor: not-allowed;
     }
     .input-group select option { background: #1c2028; }
 
@@ -160,7 +181,8 @@
       font-weight: 600;
       color: var(--accent2);
       letter-spacing: .06em;
-      margin-bottom: 8px;
+      margin-bottom: 6px;
+      padding-right: 22px;
     }
     .rule-card .rule-fields { display: flex; flex-direction: column; gap: 6px; }
     .rule-card .delete-btn {
@@ -171,6 +193,14 @@
       transition: color .15s, background .15s;
     }
     .rule-card .delete-btn:hover { color: var(--danger); background: rgba(248,113,113,.1); }
+    .dataset-card .delete-btn {
+      background: none; border: none; color: var(--muted);
+      cursor: pointer; font-size: 15px; line-height: 1;
+      padding: 2px 4px; border-radius: 4px;
+      transition: color .15s, background .15s;
+      flex-shrink: 0;
+    }
+    .dataset-card .delete-btn:hover { color: var(--danger); background: rgba(248,113,113,.1); }
 
     /* ── ADD RULE FORM ───────────────────────────────────── */
     .add-rule-panel {
@@ -181,6 +211,27 @@
     }
     .add-rule-panel h4 { font-family: var(--mono); font-size: 11px; font-weight: 600; color: var(--muted); margin-bottom: 10px; }
     .add-rule-panel .dynamic-fields { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+    .add-rule-panel .ds-fields { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+
+    /* ── EXTRA DATASET ROWS (variadic) ────────────────────── */
+    .extra-dataset-row {
+      display: flex; align-items: center; gap: 6px;
+    }
+    .extra-dataset-row select { flex: 1; }
+    .extra-dataset-row .delete-btn {
+      background: none; border: 1px solid var(--border2); color: var(--muted);
+      cursor: pointer; font-size: 13px; line-height: 1;
+      padding: 6px 8px; border-radius: 6px;
+      transition: color .15s, border-color .15s;
+      flex-shrink: 0;
+    }
+    .extra-dataset-row .delete-btn:hover:not(:disabled) { color: var(--danger); border-color: var(--danger); }
+    .extra-dataset-row .delete-btn:disabled { opacity: .3; cursor: not-allowed; }
+
+    .extended-col-group { display: flex; flex-direction: column; gap: 4px; margin-bottom: 4px; }
+    .extended-col-label {
+      font-family: var(--mono); font-size: 10px; color: var(--accent2);
+    }
 
     /* ── BUTTONS ─────────────────────────────────────────── */
     .btn {
@@ -198,7 +249,8 @@
       background: transparent; border: 1px solid var(--border2);
       color: var(--text);
     }
-    .btn-ghost:hover { border-color: var(--accent2); color: var(--accent2); }
+    .btn-ghost:hover:not(:disabled) { border-color: var(--accent2); color: var(--accent2); }
+    .btn-ghost:disabled { opacity: .3; cursor: not-allowed; }
     .btn-sm { padding: 5px 11px; font-size: 12px; }
 
     .submit-btn {
@@ -258,6 +310,7 @@
     .pill-total { background: rgba(56,189,248,.1); color: var(--accent2); border: 1px solid rgba(56,189,248,.2); }
     .pill-pass  { background: rgba(74,222,128,.1); color: var(--pass);    border: 1px solid rgba(74,222,128,.2); }
     .pill-fail  { background: rgba(248,113,113,.1); color: var(--danger); border: 1px solid rgba(248,113,113,.2); }
+    .pill-time  { background: rgba(255,255,255,.04); color: var(--muted); border: 1px solid var(--border2); }
 
     /* ── RESULTS TABLE ───────────────────────────────────── */
     .results-section { display: flex; flex-direction: column; gap: 12px; }
@@ -295,6 +348,10 @@
     }
     .rule-info .rule-meta {
       font-family: var(--mono); font-size: 11px; color: var(--muted); margin-top: 2px;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .rule-info .rule-datasets {
+      font-family: var(--mono); font-size: 10px; color: var(--accent2); margin-top: 2px;
     }
     .failure-count {
       font-family: var(--mono); font-size: 11px;
@@ -303,6 +360,7 @@
       background: rgba(248,113,113,.12);
       color: var(--danger);
       white-space: nowrap;
+      flex-shrink: 0;
     }
     .failure-count.zero {
       background: rgba(74,222,128,.1);
@@ -311,6 +369,7 @@
     .chevron {
       color: var(--muted); font-size: 12px;
       transition: transform .2s;
+      flex-shrink: 0;
     }
     .rule-result.open .chevron { transform: rotate(90deg); }
 
@@ -353,7 +412,7 @@
       text-align: center;
     }
     .idle-state .big-icon { font-size: 48px; opacity: .35; }
-    .idle-state p { font-size: 13px; line-height: 1.6; max-width: 340px; }
+    .idle-state p { font-size: 13px; line-height: 1.6; max-width: 380px; }
     .idle-state code {
       font-family: var(--mono); font-size: 11px;
       background: var(--surface); border: 1px solid var(--border2);
@@ -380,18 +439,13 @@
     .toast.info  { border-color: var(--accent2); color: var(--accent2); }
 
     /* ── PREPROCESS STEP ─────────────────────────────────── */
-    .preprocess-block {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
     .preprocess-status {
       display: none;
       align-items: center;
       gap: 8px;
       padding: 10px 12px;
       border-radius: 6px;
-      background: var(--surface);
+      background: var(--bg);
       border: 1px solid var(--border2);
       font-family: var(--mono);
       font-size: 12px;
@@ -510,55 +564,32 @@
   <!-- ── SIDEBAR ─────────────────────────────────────── -->
   <aside>
 
-    <!-- File Upload -->
+    <!-- Datasets -->
     <div>
-      <div class="section-label">1 · Ficheiro</div>
+      <div class="section-label">1 · Datasets</div>
       <div class="drop-zone" id="dropZone">
-        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" />
+        <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" multiple />
         <div class="drop-icon">📂</div>
-        <p><strong>Arraste o ficheiro aqui</strong><br/>ou clique para selecionar<br/><small>.xlsx · .xls · .csv</small></p>
+        <p><strong>Arraste ficheiros aqui</strong><br/>ou clique para selecionar<br/><small>.xlsx · .xls · .csv — pode adicionar vários</small></p>
       </div>
-      <div class="file-badge" id="fileBadge">
-        <span>📄</span>
-        <span id="fileNameDisplay"></span>
-      </div>
-    </div>
-
-
-    <!-- Preprocess -->
-    <div>
-      <div class="section-label">2 · Pré-processamento</div>
-      <div class="preprocess-block">
-        <button class="btn-preprocess" id="preprocessBtn" onclick="preprocessDataset()" disabled>
-          ⚙ Pré-processar Ficheiro
-        </button>
-        <div class="preprocess-status" id="preprocessStatus">
-          <div class="pulse running" id="preprocessPulse" style="flex-shrink:0;"></div>
-          <span id="preprocessStatusText">A processar…</span>
-        </div>
-        <div class="dataset-id-badge" id="datasetIdBadge">
-          <div>
-            <strong>dataset_id</strong>
-            <span id="datasetIdDisplay"></span>
-          </div>
-        </div>
-      </div>
+      <div class="datasets-list" id="datasetsList"></div>
     </div>
 
     <!-- Rules -->
     <div style="flex:1; min-height:0; display:flex; flex-direction:column; gap:0;">
-      <div class="section-label">3 · Regras de Validação</div>
+      <div class="section-label">2 · Regras de Validação</div>
 
       <!-- Add rule panel -->
       <div class="add-rule-panel" style="margin-bottom:12px;">
         <h4>ADICIONAR REGRA</h4>
         <div class="input-group">
           <label>Tipo de regra</label>
-          <select id="newRuleType" onchange="renderDynamicFields()">
+          <select id="newRuleType" onchange="renderRuleBuilder()">
             <option value="">— selecione —</option>
           </select>
         </div>
         <div class="rule-description" id="ruleDescription"></div>
+        <div class="ds-fields" id="ruleDatasetFields"></div>
         <div class="dynamic-fields" id="dynamicFields"></div>
         <div style="margin-top:10px;">
           <button class="btn btn-ghost btn-sm" onclick="addRule()" style="width:100%;">+ Adicionar Regra</button>
@@ -580,8 +611,8 @@
   <main id="mainPanel">
     <div class="idle-state" id="idleState">
       <div class="big-icon">🔬</div>
-      <p>Carregue um ficheiro, pré-processe-o,<br/>defina as regras e clique em <strong>Executar Validação</strong>.</p>
-      <p style="font-size:12px;">Os resultados aparecerão aqui. O polling usa<br/><code>GET /api/results/{job_id}</code>.</p>
+      <p>Carregue um ou mais ficheiros, pré-processe cada um,<br/>defina as regras (que podem usar vários datasets)<br/>e clique em <strong>Executar Validação</strong>.</p>
+      <p style="font-size:12px;">Os resultados aparecerão aqui. O polling usa<br/><code>GET /api/validation_results/{job_id}</code>.</p>
     </div>
   </main>
 
@@ -592,17 +623,30 @@
 
 <script>
 // ── STATE ─────────────────────────────────────────────────
-let rules          = [];
+let datasets       = [];   // { alias, file, filename, dadosgovId, dataframeId, preprocessingReportId, jobId, status, columns, columnNames, errorMsg, pollTimer }
+let nextDatasetNum = 1;
+let rules          = [];   // clean rule objects sent to the API: { type, dataframe_ids: [...], ...params }
+let ruleDisplays   = [];   // parallel array: { displayName, datasetAliases: [...] }
 let pollTimer      = null;
-let preprocessPollTimer = null;
-let selectedFile   = null;
-let datasetId      = null;
-let datasetColumns = [];   // [{ name, type }] populated after preprocessing
-let RULE_SCHEMA = {};
+let availableRules = [];
+
+// ── HELPERS ───────────────────────────────────────────────
+function getBaseUrl() {
+  return document.getElementById('baseUrl').value.replace(/\/$/, '');
+}
+
+let toastTimer = null;
+function showToast(msg, type = 'info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className   = `toast show ${type}`;
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.className = 'toast', 3500);
+}
 
 // ── RULE SCHEMA ───────────────────────────────────────────
 async function fetchAvailableRules() {
-  const baseUrl = document.getElementById('baseUrl').value.replace(/\/$/, '');
+  const baseUrl = getBaseUrl();
   const select  = document.getElementById('newRuleType');
 
   try {
@@ -611,10 +655,10 @@ async function fetchAvailableRules() {
 
     if (!res.ok) throw new Error(data.error || 'Erro ao obter regras.');
 
-    window.availableRules = data.rules || [];
+    availableRules = data.rules || [];
 
     select.innerHTML = '<option value="">— selecione —</option>';
-    window.availableRules.forEach(rule => {
+    availableRules.forEach(rule => {
       const opt = document.createElement('option');
       opt.value       = rule.id;
       opt.textContent = rule.display_name;
@@ -628,9 +672,12 @@ async function fetchAvailableRules() {
 }
 
 // Auto-fetch on page load
-document.addEventListener('DOMContentLoaded', fetchAvailableRules);
+document.addEventListener('DOMContentLoaded', () => {
+  fetchAvailableRules();
+  renderDatasetsList();
+});
 
-// ── DRAG & DROP ───────────────────────────────────────────
+// ── DRAG & DROP / FILE SELECTION ──────────────────────────
 const dropZone = document.getElementById('dropZone');
 const fileInput = document.getElementById('fileInput');
 
@@ -639,304 +686,193 @@ dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-ove
 dropZone.addEventListener('drop', e => {
   e.preventDefault();
   dropZone.classList.remove('drag-over');
-  const f = e.dataTransfer.files[0];
-  if (f) setFile(f);
+  Array.from(e.dataTransfer.files).forEach(addDatasetFile);
 });
 fileInput.addEventListener('change', () => {
-  if (fileInput.files[0]) setFile(fileInput.files[0]);
+  Array.from(fileInput.files).forEach(addDatasetFile);
+  fileInput.value = '';
 });
 
-function setFile(f) {
-  const allowed = ['xlsx','xls','csv'];
+function addDatasetFile(f) {
+  const allowed = ['xlsx', 'xls', 'csv'];
   const ext = f.name.split('.').pop().toLowerCase();
-  if (!allowed.includes(ext)) { showToast('Apenas ficheiros .xlsx, .xls ou .csv são aceites.', 'error'); return; }
-  selectedFile = f;
-  document.getElementById('fileNameDisplay').textContent = f.name;
-  document.getElementById('fileBadge').classList.add('show');
-
-  // Reset preprocessing state whenever a new file is selected
-  datasetId = null;
-  window.datasetColumns = null;
-  if (preprocessPollTimer) { clearInterval(preprocessPollTimer); preprocessPollTimer = null; }
-  document.getElementById('preprocessBtn').style.display = '';
-  document.getElementById('preprocessBtn').disabled = false;
-  document.getElementById('preprocessBtn').disabled = false;
-  document.getElementById('preprocessStatus').className = 'preprocess-status';
-  document.getElementById('datasetIdBadge').className = 'dataset-id-badge';
-  document.getElementById('submitBtn').disabled = true;
-}
-
-// ── DYNAMIC FIELDS ────────────────────────────────────────
-function isColumnField(key) {
-  // Matches: column, column1, column2, columns, etc.
-  return key === 'column' || key === 'columns' || /^column\d+$/.test(key);
-}
-
-function buildColumnOptions(includeEmpty = true) {
-  const cols = window.datasetColumns; // { colName: { display_name, dtype_raw } } or null
-  if (!cols || Object.keys(cols).length === 0) {
-    return '<option value="" disabled selected>— pré-processe o ficheiro primeiro —</option>';
+  if (!allowed.includes(ext)) {
+    showToast(`Ficheiro "${f.name}" ignorado: apenas .xlsx, .xls ou .csv são aceites.`, 'error');
+    return;
   }
-  const empty = includeEmpty ? '<option value="">— selecione a coluna —</option>' : '';
-  return empty + Object.entries(cols)
-    .map(([col, info]) => `<option value="${col}">${col} (${info.display_name})</option>`)
-    .join('');
-}
-
-function renderDynamicFields() {
-  const type = document.getElementById('newRuleType').value;
-  const wrap = document.getElementById('dynamicFields');
-  const desc = document.getElementById('ruleDescription');
-
-  wrap.innerHTML = '';
-  desc.textContent = '';
-  desc.classList.remove('visible');
-
-  const rule = (window.availableRules || []).find(r => r.id === type);
-  if (!rule) return;
-
-  desc.textContent = rule.description;
-  desc.classList.add('visible');
-
-  Object.entries(rule.parameters).forEach(([key, param]) => {
-    const div = document.createElement('div');
-    div.className = 'input-group column-select-wrap';
-
-    if (isColumnField(key)) {
-      const isMulti = param.type === 'array';
-      const cols = window.datasetColumns;
-      const hasColumns = cols && Object.keys(cols).length > 0;
-
-      if (isMulti) {
-        // Multi-select for array-of-columns fields (e.g. "columns")
-        const opts = hasColumns
-          ? Object.entries(cols).map(([col, info]) =>
-              `<option value="${col}" title="${info.dtype_raw}">${col} (${info.display_name})</option>`).join('')
-          : '<option value="" disabled>— pré-processe o ficheiro primeiro —</option>';
-
-        div.innerHTML = `
-          <label>${key}</label>
-          <select id="field_${key}" class="col-select" multiple data-col-multi="true" ${!hasColumns ? 'disabled' : ''}>
-            ${opts}
-          </select>
-          <span class="multi-hint">Ctrl/Cmd + clique para selecionar várias colunas</span>
-        `;
-      } else {
-        // Single-select for singular column fields (column, column1, column2, …)
-        const typeHintId = `hint_${key}`;
-        div.innerHTML = `
-          <label>${key}</label>
-          <select id="field_${key}" class="col-select" data-col-single="true"
-                  onchange="updateColumnTypeHint('${key}', '${typeHintId}')">
-            ${buildColumnOptions(true)}
-          </select>
-          <span class="column-type-hint" id="${typeHintId}"></span>
-        `;
-      }
-    } else {
-      // Regular text / number input
-      const inputType = param.type === 'integer' || param.type === 'number' ? 'number' : 'text';
-      div.innerHTML = `
-        <label>${key}</label>
-        <input type="${inputType}" id="field_${key}" placeholder="${param.description}">
-      `;
-    }
-
-    wrap.appendChild(div);
+  const alias = `D${nextDatasetNum++}`;
+  datasets.push({
+    alias,
+    file: f,
+    filename: f.name,
+    dadosgovId: '',
+    dataframeId: null,
+    preprocessingReportId: null,
+    jobId: null,
+    status: 'pending', // pending | sending | queued | processing | done | error
+    columns: null,
+    columnNames: null,
+    errorMsg: null,
+    pollTimer: null
   });
+  renderDatasetsList();
 }
 
-function updateColumnTypeHint(key, hintId) {
-  const sel  = document.getElementById('field_' + key);
-  const hint = document.getElementById(hintId);
-  if (!sel || !hint) return;
-  const cols = window.datasetColumns || {};
-  const info = cols[sel.value];
-  hint.textContent = info ? `Tipo: ${info.display_name}` : '';
-}
+function removeDataset(idx) {
+  const d = datasets[idx];
+  if (d.pollTimer) clearInterval(d.pollTimer);
 
-// ── ADD RULE ──────────────────────────────────────────────
-function addRule() {
-  const type = document.getElementById('newRuleType').value;
-  if (!type) { showToast('Por favor selecione um tipo de regra.', 'error'); return; }
-
-  const ruleDef = (window.availableRules || []).find(r => r.id === type);
-  if (!ruleDef) { showToast('Regras não carregadas. Clique em "↺ Buscar" primeiro.', 'error'); return; }
-
-  const rule = { type };
-  const params = ruleDef.parameters || {};
-
-  for (const [key, param] of Object.entries(params)) {
-    const el  = document.getElementById('field_' + key);
-    const isReq   = param.required;
-
-    // ── Column multi-select (array of columns) ──────────────
-    if (el && el.dataset.colMulti) {
-      const selected = Array.from(el.selectedOptions).map(o => o.value).filter(Boolean);
-      if (isReq && !selected.length) {
-        showToast(`Selecione pelo menos uma coluna para: ${key}`, 'error'); return;
-      }
-      if (selected.length) rule[key] = selected;
-      continue;
-    }
-
-    // ── Column single-select ────────────────────────────────
-    if (el && el.dataset.colSingle) {
-      const val = el.value.trim();
-      if (isReq && !val) {
-        showToast(`Selecione uma coluna para: ${key}`, 'error'); return;
-      }
-      if (val) rule[key] = val;
-      continue;
-    }
-
-    // ── Regular fields ──────────────────────────────────────
-    const val = el ? el.value.trim() : '';
-    const isArray = param.type === 'array';
-    const isInt   = param.type === 'integer';
-    const isNum   = param.type === 'number';
-
-    if (isArray) {
-      const arr = val.split(',').map(s => s.trim()).filter(Boolean);
-      if (isReq && !arr.length) {
-        showToast(`Preencha o campo: ${param.description || key}`, 'error'); return;
-      }
-      if (arr.length) rule[key] = arr;
-    } else if (isInt) {
-      if (isReq && val === '') {
-        showToast(`Preencha o campo: ${param.description || key}`, 'error'); return;
-      }
-      if (val !== '') rule[key] = parseInt(val, 10);
-    } else if (isNum) {
-      if (isReq && val === '') {
-        showToast(`Preencha o campo: ${param.description || key}`, 'error'); return;
-      }
-      if (val !== '') rule[key] = parseFloat(val);
-    } else {
-      if (isReq && !val) {
-        showToast(`Preencha o campo: ${param.description || key}`, 'error'); return;
-      }
-      if (val) rule[key] = val;
-    }
+  // Warn if any rule references this dataset
+  const usedBy = ruleDisplays
+    .map((rd, i) => rd.datasetAliases.includes(d.alias) ? i : -1)
+    .filter(i => i >= 0);
+  if (usedBy.length) {
+    showToast(`Atenção: ${d.alias} é usado em ${usedBy.length} regra(s). Remova-as ou ajuste-as.`, 'error');
   }
 
-  rules.push(rule);
-  renderRulesList();
-
-  // Reset form
-  document.getElementById('newRuleType').value = '';
-  document.getElementById('dynamicFields').innerHTML = '';
-  document.getElementById('ruleDescription').textContent = '';
-  document.getElementById('ruleDescription').classList.remove('visible');
+  datasets.splice(idx, 1);
+  renderDatasetsList();
+  renderRuleBuilder();
 }
 
-// ── RENDER RULES LIST ─────────────────────────────────────
-function renderRulesList() {
-  const list = document.getElementById('rulesList');
-  list.innerHTML = '';
-  rules.forEach((rule, i) => {
-    const card = document.createElement('div');
-    card.className = 'rule-card';
-    const metaParts = Object.entries(rule)
-      .filter(([k]) => k !== 'type')
-      .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
-      .join(' · ');
+// ── DATASETS LIST RENDER ──────────────────────────────────
+function renderDatasetsList() {
+  const wrap = document.getElementById('datasetsList');
+  wrap.innerHTML = '';
 
-    // Resolve display name from loaded rules if available
-    const rDef = (window.availableRules || []).find(r => r.id === rule.type);
-    const displayName = rDef ? rDef.display_name : rule.type;
+  datasets.forEach((d, idx) => {
+    const card = document.createElement('div');
+    card.className = 'dataset-card';
+
+    let statusHtml = '';
+    if (d.status === 'pending' || d.status === 'error') {
+      if (d.status === 'error') {
+        statusHtml += `
+          <div class="preprocess-status show error">
+            <div class="pulse failure"></div>
+            <span>${d.errorMsg || 'Ocorreu um erro.'}</span>
+          </div>`;
+      }
+      statusHtml += `
+        <button class="btn-preprocess" onclick="preprocessDataset(${idx})">
+          ${d.status === 'error' ? '↺ Tentar novamente' : '⚙ Pré-processar'}
+        </button>`;
+    } else if (d.status === 'sending' || d.status === 'queued' || d.status === 'processing') {
+      const label = d.status === 'sending'   ? 'A enviar…'
+                  : d.status === 'queued'     ? 'Na fila de espera…'
+                  : 'A pré-processar…';
+      statusHtml = `
+        <div class="preprocess-status show processing">
+          <div class="pulse running"></div>
+          <span>${label}</span>
+        </div>`;
+    } else if (d.status === 'done') {
+      const colCount = d.columnNames ? d.columnNames.length : Object.keys(d.columns || {}).length;
+      statusHtml = `
+        <div class="dataset-id-badge show">
+          <div>
+            <strong>dataframe_id</strong>
+            <span>${d.dataframeId}</span>
+          </div>
+        </div>
+        <div class="multi-hint">${colCount} coluna${colCount === 1 ? '' : 's'} identificada${colCount === 1 ? '' : 's'}</div>`;
+    }
+
+    const inputLocked = (d.status === 'sending' || d.status === 'queued' || d.status === 'processing' || d.status === 'done');
 
     card.innerHTML = `
-      <div class="rule-type-badge">${displayName}</div>
-      <div style="font-family:var(--mono);font-size:11px;color:var(--muted);word-break:break-word;">${metaParts || '—'}</div>
-      <button class="delete-btn" onclick="removeRule(${i})" title="Remover">✕</button>
+      <div class="dataset-card-head">
+        <span class="dataset-alias-badge">${d.alias}</span>
+        <span class="dataset-filename" title="${d.filename}">${d.filename}</span>
+        <button class="delete-btn" onclick="removeDataset(${idx})" title="Remover">✕</button>
+      </div>
+      <div class="input-group">
+        <label>ID do dataset (dados.gov)</label>
+        <input type="text" value="${d.dadosgovId}" placeholder="ex: municipios-2024"
+               oninput="datasets[${idx}].dadosgovId = this.value" ${inputLocked ? 'disabled' : ''}>
+      </div>
+      ${statusHtml}
     `;
-    list.appendChild(card);
+    wrap.appendChild(card);
   });
-}
-
-function removeRule(i) {
-  rules.splice(i, 1);
-  renderRulesList();
 }
 
 // ── PREPROCESS ────────────────────────────────────────────
-async function preprocessDataset() {
-  if (!selectedFile) { showToast('Por favor carregue um ficheiro primeiro.', 'error'); return; }
+async function preprocessDataset(idx) {
+  const d = datasets[idx];
+  if (!d) return;
 
-  const baseUrl = document.getElementById('baseUrl').value.replace(/\/$/, '');
-  const btn     = document.getElementById('preprocessBtn');
-  btn.disabled  = true;
-  btn.textContent = '⏳ A enviar…';
+  if (!d.dadosgovId || !d.dadosgovId.trim()) {
+    showToast(`Indique o ID do dataset em dados.gov para ${d.alias}.`, 'error');
+    return;
+  }
 
-  // Show processing status
-  const statusEl = document.getElementById('preprocessStatus');
-  statusEl.className = 'preprocess-status show processing';
-  document.getElementById('preprocessPulse').className = 'pulse running';
-  document.getElementById('preprocessStatusText').textContent = 'A enviar ficheiro…';
-  document.getElementById('datasetIdBadge').className = 'dataset-id-badge';
-  document.getElementById('submitBtn').disabled = true;
-  datasetId = null;
+  const baseUrl = getBaseUrl();
+  d.status = 'sending';
+  d.errorMsg = null;
+  renderDatasetsList();
 
   const fd = new FormData();
-  fd.append('file', selectedFile);
+  fd.append('file', d.file);
+  fd.append('dadosgov_dataset_id', d.dadosgovId.trim());
 
   try {
     const res  = await fetch(`${baseUrl}/preprocess`, { method: 'POST', body: fd });
     const data = await res.json();
 
     if (!res.ok) {
-      setPreprocessError(data.error || 'Falha ao pré-processar.');
+      d.status = 'error';
+      d.errorMsg = data.error || 'Falha ao pré-processar.';
+      renderDatasetsList();
+      showToast(d.errorMsg, 'error');
       return;
     }
 
-    btn.textContent = '⚙ Pré-processar Ficheiro';
-    document.getElementById('preprocessStatusText').textContent = 'Na fila de espera…';
-    startPreprocessPolling(baseUrl, data.job_id, data.dataset_id);
+    d.status = 'queued';
+    d.dataframeId = data.dataframe_id;
+    d.preprocessingReportId = data.preprocessing_report_id;
+    d.jobId = data.job_id;
+    renderDatasetsList();
+    startDatasetPolling(idx);
 
   } catch (err) {
-    setPreprocessError('Não foi possível contactar o backend.');
+    d.status = 'error';
+    d.errorMsg = 'Não foi possível contactar o backend.';
+    renderDatasetsList();
+    showToast(d.errorMsg, 'error');
   }
 }
 
-function startPreprocessPolling(baseUrl, jobId, pendingDatasetId) {
-  if (preprocessPollTimer) clearInterval(preprocessPollTimer);
+function startDatasetPolling(idx) {
+  const d = datasets[idx];
+  if (!d) return;
+  if (d.pollTimer) clearInterval(d.pollTimer);
 
-  preprocessPollTimer = setInterval(async () => {
+  const baseUrl = getBaseUrl();
+  d.pollTimer = setInterval(async () => {
     try {
-      const res  = await fetch(`${baseUrl}/results/${jobId}`);
+      const res  = await fetch(`${baseUrl}/preprocessing_results/${d.jobId}`);
       const data = await res.json();
 
-      if (data.status === 'started') {
-        document.getElementById('preprocessStatusText').textContent = 'A pré-processar…';
-      }
-
-      if (data.status === 'success') {
-        clearInterval(preprocessPollTimer);
-        preprocessPollTimer = null;
-        datasetId = pendingDatasetId;
-
-        // Store column map — new shape: { colName: { display_name, dtype_raw } }
-        window.datasetColumns = (data.result && data.result.presumed_column_types) || {};
-
-        const statusEl = document.getElementById('preprocessStatus');
-        statusEl.className = 'preprocess-status show done';
-        document.getElementById('preprocessPulse').className = 'pulse success';
-        document.getElementById('preprocessStatusText').textContent = 'Pré-processamento concluído';
-
-        document.getElementById('datasetIdDisplay').textContent = datasetId;
-        document.getElementById('datasetIdBadge').classList.add('show');
-
-        // Hide the button — preprocessing is a one-shot action per file
-        document.getElementById('preprocessBtn').style.display = 'none';
-        document.getElementById('submitBtn').disabled = false;
-
-        showToast('Ficheiro pré-processado com sucesso!', 'info');
-
+      if (data.status === 'started' && d.status !== 'processing') {
+        d.status = 'processing';
+        renderDatasetsList();
+      } else if (data.status === 'success') {
+        clearInterval(d.pollTimer);
+        d.pollTimer = null;
+        d.status = 'done';
+        d.columns = (data.result && data.result.presumed_column_types) || {};
+        d.columnNames = (data.result && data.result.column_names) || [];
+        renderDatasetsList();
+        renderRuleBuilder(); // refresh column dropdowns for the rule currently being built
+        showToast(`${d.alias} (${d.filename}) pré-processado com sucesso!`, 'info');
       } else if (data.status === 'failure') {
-        clearInterval(preprocessPollTimer);
-        preprocessPollTimer = null;
-        setPreprocessError('O pré-processamento falhou no servidor.');
+        clearInterval(d.pollTimer);
+        d.pollTimer = null;
+        d.status = 'error';
+        d.errorMsg = 'O pré-processamento falhou no servidor.';
+        renderDatasetsList();
+        showToast(`${d.alias}: ${d.errorMsg}`, 'error');
       }
     } catch {
       // network hiccup — keep trying
@@ -944,29 +880,467 @@ function startPreprocessPolling(baseUrl, jobId, pendingDatasetId) {
   }, 1500);
 }
 
-function setPreprocessError(msg) {
-  const statusEl = document.getElementById('preprocessStatus');
-  statusEl.className = 'preprocess-status show error';
-  document.getElementById('preprocessPulse').className = 'pulse failure';
-  document.getElementById('preprocessStatusText').textContent = msg;
-  document.getElementById('preprocessBtn').disabled = false;
-  document.getElementById('preprocessBtn').textContent = '↺ Tentar novamente';
-  showToast(msg, 'error');
+// ── RULE BUILDER: DATASET SLOTS ───────────────────────────
+function buildDatasetOptions(selected) {
+  const done = datasets.map((d, i) => ({ d, i })).filter(x => x.d.status === 'done');
+  if (!done.length) {
+    return '<option value="" disabled selected>— pré-processe um dataset primeiro —</option>';
+  }
+  let html = '<option value="">— selecione —</option>';
+  html += done.map(({ d, i }) =>
+    `<option value="${i}" ${String(i) === String(selected) ? 'selected' : ''}>${d.alias} — ${d.filename}</option>`
+  ).join('');
+  return html;
+}
+
+function renderRuleBuilder() {
+  const type    = document.getElementById('newRuleType').value;
+  const descEl  = document.getElementById('ruleDescription');
+  const dsEl    = document.getElementById('ruleDatasetFields');
+  const dynEl   = document.getElementById('dynamicFields');
+
+  descEl.textContent = '';
+  descEl.classList.remove('visible');
+  dsEl.innerHTML = '';
+  dynEl.innerHTML = '';
+
+  const ruleDef = availableRules.find(r => r.id === type);
+  window.currentRuleDef = ruleDef || null;
+  if (!ruleDef) return;
+
+  descEl.textContent = ruleDef.description;
+  descEl.classList.add('visible');
+
+  const dsParams     = ruleDef.parameters.dataset_parameters || {};
+  const descriptions = dsParams.dataset_descriptions || {};
+
+  const fixedKeys = Object.keys(descriptions)
+    .filter(k => /^dataset\d+$/.test(k))
+    .sort((a, b) => parseInt(a.replace('dataset', ''), 10) - parseInt(b.replace('dataset', ''), 10));
+  const variadicKey = Object.keys(descriptions).find(k => !/^dataset\d+$/.test(k));
+
+  window.currentRuleFixedKeys = fixedKeys;
+  window.currentRuleNumFixed  = fixedKeys.length;
+  window.currentRuleVariadic  = !!variadicKey;
+
+  const minD = (dsParams.min_datasets ?? fixedKeys.length);
+  const maxD = dsParams.max_datasets;
+
+  window.currentRuleExtraMin = Math.max(0, minD - fixedKeys.length);
+  window.currentRuleExtraMax = (maxD === null || maxD === undefined)
+    ? Infinity
+    : Math.max(0, maxD - fixedKeys.length);
+
+  if (!variadicKey) {
+    window.currentRuleExtraCount = 0;
+  } else if (window.currentRuleExtraCount === undefined || window.currentRuleExtraCount < window.currentRuleExtraMin) {
+    window.currentRuleExtraCount = window.currentRuleExtraMin;
+  }
+
+  // Fixed dataset selects
+  fixedKeys.forEach(key => {
+    const div = document.createElement('div');
+    div.className = 'input-group';
+    div.innerHTML = `
+      <label>${descriptions[key]}</label>
+      <select id="dsfield_${key}" class="ds-select" onchange="onRuleDatasetChange()">
+        ${buildDatasetOptions()}
+      </select>
+    `;
+    dsEl.appendChild(div);
+  });
+
+  // Variadic dataset rows
+  if (variadicKey) {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = `
+      <div class="section-label" style="margin:10px 0 6px;">${descriptions[variadicKey]}</div>
+      <div id="extraDatasetsRows" style="display:flex;flex-direction:column;gap:6px;"></div>
+      <button type="button" class="btn btn-ghost btn-sm" id="addExtraDatasetBtn" onclick="addExtraDataset()" style="margin-top:6px;width:100%;">+ Adicionar dataset</button>
+    `;
+    dsEl.appendChild(wrap);
+    renderExtraDatasetRows();
+  }
+
+  renderRuleParamFields();
+}
+
+function renderExtraDatasetRows() {
+  const rowsEl = document.getElementById('extraDatasetsRows');
+  if (!rowsEl) return;
+
+  const prevValues = window.currentRuleExtraValues || [];
+  rowsEl.innerHTML = '';
+
+  for (let i = 0; i < window.currentRuleExtraCount; i++) {
+    const row = document.createElement('div');
+    row.className = 'extra-dataset-row';
+    row.innerHTML = `
+      <select id="dsfield_extra_${i}" class="ds-select" onchange="onRuleDatasetChange()">
+        ${buildDatasetOptions(prevValues[i])}
+      </select>
+      <button type="button" class="delete-btn" onclick="removeExtraDataset(${i})"
+              ${window.currentRuleExtraCount <= window.currentRuleExtraMin ? 'disabled' : ''} title="Remover dataset">✕</button>
+    `;
+    rowsEl.appendChild(row);
+  }
+
+  const addBtn = document.getElementById('addExtraDatasetBtn');
+  if (addBtn) addBtn.disabled = window.currentRuleExtraCount >= window.currentRuleExtraMax;
+}
+
+function saveExtraDatasetValues() {
+  const vals = [];
+  for (let i = 0; i < window.currentRuleExtraCount; i++) {
+    const sel = document.getElementById(`dsfield_extra_${i}`);
+    vals.push(sel ? sel.value : '');
+  }
+  window.currentRuleExtraValues = vals;
+}
+
+function addExtraDataset() {
+  saveExtraDatasetValues();
+  window.currentRuleExtraCount = Math.min(window.currentRuleExtraCount + 1, window.currentRuleExtraMax);
+  renderExtraDatasetRows();
+  renderRuleParamFields();
+}
+
+function removeExtraDataset(i) {
+  saveExtraDatasetValues();
+  window.currentRuleExtraValues.splice(i, 1);
+  window.currentRuleExtraCount = Math.max(window.currentRuleExtraCount - 1, window.currentRuleExtraMin);
+  renderExtraDatasetRows();
+  renderRuleParamFields();
+}
+
+function onRuleDatasetChange() {
+  saveExtraDatasetValues();
+  renderRuleParamFields(); // column options depend on the chosen datasets
+}
+
+// ── RULE BUILDER: VALIDATION PARAMETERS ───────────────────
+function isSingleColumnParam(key) {
+  return key === 'column' || key === 'base_column' || key === 'extended_column' || /^column\d+$/.test(key);
+}
+
+function datasetIndexForParam(key, numFixed) {
+  if (key === 'base_column')   return 0;
+  if (key === 'extended_column') return numFixed >= 2 ? 1 : 0;
+  if (key === 'column1') return 0;
+  if (key === 'column2') return numFixed >= 2 ? 1 : 0;
+  return 0; // 'column' and anything else
+}
+
+// globalIdx 0..numFixed-1 -> fixed dataset slots; numFixed.. -> extra (variadic) slots
+function getRuleDatasetAt(globalIdx) {
+  const numFixed = window.currentRuleNumFixed || 0;
+  let sel;
+  if (globalIdx < numFixed) {
+    const key = window.currentRuleFixedKeys[globalIdx];
+    sel = document.getElementById(`dsfield_${key}`);
+  } else {
+    sel = document.getElementById(`dsfield_extra_${globalIdx - numFixed}`);
+  }
+  if (!sel || sel.value === '') return null;
+  return datasets[parseInt(sel.value, 10)] || null;
+}
+
+function buildColumnOptionsForDataset(ds, includeEmpty) {
+  if (!ds || !ds.columns) {
+    return '<option value="" disabled selected>— selecione um dataset acima —</option>';
+  }
+  const empty = includeEmpty ? '<option value="">— selecione a coluna —</option>' : '';
+  return empty + Object.entries(ds.columns).map(([col, info]) =>
+    `<option value="${col}" title="${info.dtype_raw}">${col} (${info.display_name})</option>`
+  ).join('');
+}
+
+function buildMultiColumnOptions(ds) {
+  if (!ds || !ds.columns) {
+    return '<option value="" disabled>— selecione um dataset acima —</option>';
+  }
+  return Object.entries(ds.columns).map(([col, info]) =>
+    `<option value="${col}" title="${info.dtype_raw}">${col} (${info.display_name})</option>`
+  ).join('');
+}
+
+function updateColumnTypeHint(key, hintId, dsIdx) {
+  const sel  = document.getElementById('field_' + key);
+  const hint = document.getElementById(hintId);
+  if (!sel || !hint) return;
+  const ds   = getRuleDatasetAt(dsIdx);
+  const info = (ds && ds.columns) ? ds.columns[sel.value] : null;
+  hint.textContent = info ? `Tipo: ${info.display_name}` : '';
+}
+
+function renderRuleParamFields() {
+  const dynEl = document.getElementById('dynamicFields');
+  dynEl.innerHTML = '';
+
+  const ruleDef = window.currentRuleDef;
+  if (!ruleDef) return;
+
+  const valParams = ruleDef.parameters.validation_parameters || {};
+  const numFixed   = window.currentRuleNumFixed || 0;
+  const extraCount = window.currentRuleExtraCount || 0;
+
+  Object.entries(valParams).forEach(([key, param]) => {
+    const div = document.createElement('div');
+    div.className = 'input-group column-select-wrap';
+
+    if (key === 'extended_columns' && param.type === 'array') {
+      let inner = `<label>${param.description || key}</label>`;
+      if (extraCount === 0) {
+        inner += `<span class="multi-hint">Adicione datasets adicionais acima primeiro</span>`;
+      }
+      for (let i = 0; i < extraCount; i++) {
+        const ds = getRuleDatasetAt(numFixed + i);
+        const aliasLabel = ds ? `${ds.alias} — ${ds.filename}` : `dataset adicional ${i + 1}`;
+        inner += `
+          <div class="extended-col-group">
+            <span class="extended-col-label">${aliasLabel}</span>
+            <select id="field_extended_columns_${i}" class="col-select">
+              ${buildColumnOptionsForDataset(ds, true)}
+            </select>
+          </div>`;
+      }
+      div.innerHTML = inner;
+
+    } else if (key === 'columns' && param.type === 'array') {
+      const ds = getRuleDatasetAt(0);
+      div.innerHTML = `
+        <label>${key}</label>
+        <select id="field_${key}" class="col-select" multiple data-col-multi="true" ${!ds ? 'disabled' : ''}>
+          ${buildMultiColumnOptions(ds)}
+        </select>
+        <span class="multi-hint">Ctrl/Cmd + clique para selecionar várias colunas</span>
+      `;
+
+    } else if (isSingleColumnParam(key)) {
+      const dsIdx = datasetIndexForParam(key, numFixed);
+      const ds = getRuleDatasetAt(dsIdx);
+      const typeHintId = `hint_${key}`;
+      div.innerHTML = `
+        <label>${key}</label>
+        <select id="field_${key}" class="col-select" data-col-single="true"
+                onchange="updateColumnTypeHint('${key}', '${typeHintId}', ${dsIdx})">
+          ${buildColumnOptionsForDataset(ds, true)}
+        </select>
+        <span class="column-type-hint" id="${typeHintId}"></span>
+      `;
+
+    } else if (param.type === 'array') {
+      // Generic array of values (e.g. possible_values) — not a column reference
+      div.innerHTML = `
+        <label>${key}</label>
+        <input type="text" id="field_${key}" placeholder="${param.description || key} (separados por vírgula)">
+      `;
+
+    } else {
+      const inputType = (param.type === 'integer' || param.type === 'number' || param.type === 'numeric') ? 'number' : 'text';
+      div.innerHTML = `
+        <label>${key}</label>
+        <input type="${inputType}" id="field_${key}" placeholder="${param.description || key}">
+      `;
+    }
+
+    dynEl.appendChild(div);
+  });
+}
+
+// ── ADD RULE ──────────────────────────────────────────────
+function addRule() {
+  const ruleDef = window.currentRuleDef;
+  if (!ruleDef) { showToast('Selecione um tipo de regra.', 'error'); return; }
+
+  const fixedKeys  = window.currentRuleFixedKeys || [];
+  const dsParams   = ruleDef.parameters.dataset_parameters || {};
+  const descriptions = dsParams.dataset_descriptions || {};
+  const extraCount = window.currentRuleExtraCount || 0;
+
+  const dataframeIds   = [];
+  const datasetAliases = [];
+
+  // Fixed dataset slots
+  for (const key of fixedKeys) {
+    const sel = document.getElementById(`dsfield_${key}`);
+    if (!sel || !sel.value) {
+      showToast(`Selecione um dataset para: ${descriptions[key] || key}`, 'error');
+      return;
+    }
+    const ds = datasets[parseInt(sel.value, 10)];
+    dataframeIds.push(ds.dataframeId);
+    datasetAliases.push(ds.alias);
+  }
+
+  // Variadic dataset slots
+  for (let i = 0; i < extraCount; i++) {
+    const sel = document.getElementById(`dsfield_extra_${i}`);
+    if (!sel || !sel.value) {
+      showToast('Selecione todos os datasets adicionais.', 'error');
+      return;
+    }
+    const ds = datasets[parseInt(sel.value, 10)];
+    dataframeIds.push(ds.dataframeId);
+    datasetAliases.push(ds.alias);
+  }
+
+  const rule = { type: ruleDef.id, dataframe_ids: dataframeIds };
+  const valParams = ruleDef.parameters.validation_parameters || {};
+  const numFixed = window.currentRuleNumFixed || 0;
+
+  for (const [key, param] of Object.entries(valParams)) {
+    const isReq = !!param.required;
+
+    if (key === 'extended_columns' && param.type === 'array') {
+      const arr = [];
+      for (let i = 0; i < extraCount; i++) {
+        const sel = document.getElementById(`field_extended_columns_${i}`);
+        const val = sel ? sel.value : '';
+        if (isReq && !val) {
+          showToast(`Selecione a coluna correspondente em ${datasetAliases[numFixed + i] || `dataset adicional ${i + 1}`}.`, 'error');
+          return;
+        }
+        if (val) arr.push(val);
+      }
+      if (arr.length) rule[key] = arr;
+      continue;
+    }
+
+    if (key === 'columns' && param.type === 'array') {
+      const sel = document.getElementById(`field_${key}`);
+      const selected = sel ? Array.from(sel.selectedOptions).map(o => o.value).filter(Boolean) : [];
+      if (isReq && !selected.length) {
+        showToast(`Selecione pelo menos uma coluna para: ${key}`, 'error');
+        return;
+      }
+      if (param.min_items && selected.length < param.min_items) {
+        showToast(`Selecione pelo menos ${param.min_items} colunas para: ${key}`, 'error');
+        return;
+      }
+      if (selected.length) rule[key] = selected;
+      continue;
+    }
+
+    if (isSingleColumnParam(key)) {
+      const sel = document.getElementById(`field_${key}`);
+      const val = sel ? sel.value : '';
+      if (isReq && !val) {
+        showToast(`Selecione uma coluna para: ${key}`, 'error');
+        return;
+      }
+      if (val) rule[key] = val;
+      continue;
+    }
+
+    // Regular text / number / generic array fields
+    const el = document.getElementById('field_' + key);
+    const val = el ? el.value.trim() : '';
+    const isArray = param.type === 'array';
+    const isInt   = param.type === 'integer';
+    const isNum   = param.type === 'number' || param.type === 'numeric';
+
+    if (isArray) {
+      const arr = val.split(',').map(s => s.trim()).filter(Boolean);
+      if (isReq && !arr.length) {
+        showToast(`Preencha o campo: ${param.description || key}`, 'error');
+        return;
+      }
+      if (arr.length) rule[key] = arr;
+    } else if (isInt) {
+      if (isReq && val === '') {
+        showToast(`Preencha o campo: ${param.description || key}`, 'error');
+        return;
+      }
+      if (val !== '') rule[key] = parseInt(val, 10);
+    } else if (isNum) {
+      if (isReq && val === '') {
+        showToast(`Preencha o campo: ${param.description || key}`, 'error');
+        return;
+      }
+      if (val !== '') rule[key] = parseFloat(val);
+    } else {
+      if (isReq && !val) {
+        showToast(`Preencha o campo: ${param.description || key}`, 'error');
+        return;
+      }
+      if (val) rule[key] = val;
+    }
+  }
+
+  rules.push(rule);
+  ruleDisplays.push({ displayName: ruleDef.display_name, datasetAliases });
+  renderRulesList();
+
+  // Reset the builder form
+  document.getElementById('newRuleType').value = '';
+  document.getElementById('ruleDescription').textContent = '';
+  document.getElementById('ruleDescription').classList.remove('visible');
+  document.getElementById('ruleDatasetFields').innerHTML = '';
+  document.getElementById('dynamicFields').innerHTML = '';
+  window.currentRuleDef = null;
+  window.currentRuleExtraCount = undefined;
+  window.currentRuleExtraValues = undefined;
+}
+
+// ── RENDER RULES LIST ─────────────────────────────────────
+function renderRulesList() {
+  const list = document.getElementById('rulesList');
+  list.innerHTML = '';
+
+  rules.forEach((rule, i) => {
+    const card = document.createElement('div');
+    card.className = 'rule-card';
+    const meta = ruleDisplays[i];
+
+    const paramParts = Object.entries(rule)
+      .filter(([k]) => k !== 'type' && k !== 'dataframe_ids')
+      .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
+      .join(' · ');
+
+    card.innerHTML = `
+      <div class="rule-type-badge">${meta.displayName}</div>
+      <div class="multi-hint" style="margin-bottom:4px;">datasets: ${meta.datasetAliases.join(', ')}</div>
+      <div style="font-family:var(--mono);font-size:11px;color:var(--muted);word-break:break-word;">${paramParts || '—'}</div>
+      <button class="delete-btn" onclick="removeRule(${i})" title="Remover">✕</button>
+    `;
+    list.appendChild(card);
+  });
+
+  document.getElementById('submitBtn').disabled = rules.length === 0;
+}
+
+function removeRule(i) {
+  rules.splice(i, 1);
+  ruleDisplays.splice(i, 1);
+  renderRulesList();
 }
 
 // ── SUBMIT ────────────────────────────────────────────────
 async function submitValidation() {
-  if (!selectedFile) { showToast('Por favor carregue um ficheiro primeiro.', 'error'); return; }
-  if (!datasetId)    { showToast('Por favor pré-processe o ficheiro primeiro (passo 2).', 'error'); return; }
   if (!rules.length) { showToast('Adicione pelo menos uma regra antes de executar.', 'error'); return; }
 
-  const baseUrl = document.getElementById('baseUrl').value.replace(/\/$/, '');
-  const btn     = document.getElementById('submitBtn');
-  btn.disabled  = true;
+  // Build the {dataframe_id: preprocessing_report_id} map from every dataset used by the rules
+  const datasetsParam = {};
+  for (const rule of rules) {
+    for (const dfId of rule.dataframe_ids) {
+      const ds = datasets.find(d => d.dataframeId === dfId);
+      if (ds) datasetsParam[ds.dataframeId] = ds.preprocessingReportId;
+    }
+  }
+
+  if (Object.keys(datasetsParam).length === 0) {
+    showToast('Nenhum dataset válido encontrado para as regras adicionadas.', 'error');
+    return;
+  }
+
+  const baseUrl = getBaseUrl();
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
   btn.textContent = '⏳ A enviar…';
 
   const params = new URLSearchParams({
-    dataset_id: datasetId,
+    datasets: JSON.stringify(datasetsParam),
     rules: JSON.stringify(rules)
   });
 
@@ -979,24 +1353,24 @@ async function submitValidation() {
       return;
     }
 
-    showStatusCard(data.job_id, 'queued');
-    startPolling(baseUrl, data.job_id);
+    showStatusCard(data.job_id);
+    startValidationPolling(baseUrl, data.job_id);
 
   } catch (err) {
     showToast('Não foi possível contactar o backend. Está em execução?', 'error');
   } finally {
-    btn.disabled    = false;
+    btn.disabled = false;
     btn.textContent = '▶ Executar Validação';
   }
 }
 
-// ── POLLING ───────────────────────────────────────────────
-function startPolling(baseUrl, jobId) {
+// ── VALIDATION POLLING ────────────────────────────────────
+function startValidationPolling(baseUrl, jobId) {
   if (pollTimer) clearInterval(pollTimer);
 
   pollTimer = setInterval(async () => {
     try {
-      const res  = await fetch(`${baseUrl}/results/${jobId}`);
+      const res  = await fetch(`${baseUrl}/validation_results/${jobId}`);
       const data = await res.json();
 
       updateStatusCard(jobId, data.status);
@@ -1016,7 +1390,7 @@ function startPolling(baseUrl, jobId) {
 }
 
 // ── STATUS CARD ───────────────────────────────────────────
-function showStatusCard(jobId, status) {
+function showStatusCard(jobId) {
   const main = document.getElementById('mainPanel');
   main.innerHTML = `
     <div class="status-card" id="statusCard">
@@ -1036,7 +1410,7 @@ function updateStatusCard(jobId, status) {
   if (!pulse || !text) return;
 
   const map = {
-    queued:  { cls: 'running', label: 'Na fila de espera…'   },
+    queued:  { cls: 'running', label: 'Na fila de espera…'    },
     started: { cls: 'running', label: 'A executar validação…' },
     success: { cls: 'success', label: 'Concluído'             },
     failure: { cls: 'failure', label: 'Falhou'                },
@@ -1047,6 +1421,13 @@ function updateStatusCard(jobId, status) {
 }
 
 // ── RENDER RESULTS ────────────────────────────────────────
+function aliasesForDataframeIds(ids) {
+  return (ids || []).map(id => {
+    const ds = datasets.find(d => d.dataframeId === id);
+    return ds ? ds.alias : (id ? id.slice(0, 8) : '?');
+  }).join(', ');
+}
+
 function renderResults(report, jobId) {
   const area = document.getElementById('resultsArea');
   if (!area) return;
@@ -1056,6 +1437,7 @@ function renderResults(report, jobId) {
       <div class="pill pill-total">📋 ${report.total_rules} regras</div>
       <div class="pill pill-pass">✔ ${report.passed} passou</div>
       <div class="pill pill-fail">✘ ${report.failed} falhou</div>
+      ${report.execution_time_seconds != null ? `<div class="pill pill-time">⏱ ${report.execution_time_seconds}s</div>` : ''}
     </div>
   `;
 
@@ -1066,14 +1448,15 @@ function renderResults(report, jobId) {
     const dotCls   = errored ? 'dot-warn'  : passed ? 'dot-pass' : 'dot-fail';
     const failCnt  = (r.failures || []).length;
 
-    const meta = Object.entries(r.rule)
-      .filter(([k]) => k !== 'type')
+    const paramMeta = Object.entries(r.rule)
+      .filter(([k]) => k !== 'type' && k !== 'dataframe_ids')
       .map(([k, v]) => `${k}: ${Array.isArray(v) ? v.join(', ') : v}`)
       .join(' · ');
 
     // Resolve display name
-    const rDef = (window.availableRules || []).find(d => d.id === r.rule.type);
+    const rDef = availableRules.find(d => d.id === r.rule.type);
     const displayName = rDef ? rDef.display_name : r.rule.type;
+    const dsLabel = `datasets: ${aliasesForDataframeIds(r.rule.dataframe_ids)}`;
 
     let bodyHtml = '';
     if (errored) {
@@ -1103,7 +1486,8 @@ function renderResults(report, jobId) {
           <div class="status-dot ${dotCls}"></div>
           <div class="rule-info">
             <div class="rule-name">${displayName}</div>
-            <div class="rule-meta">${meta || '—'}</div>
+            <div class="rule-meta">${paramMeta || '—'}</div>
+            <div class="rule-datasets">${dsLabel}</div>
           </div>
           ${countBadge}
           <span class="chevron">›</span>
@@ -1123,16 +1507,6 @@ function renderResults(report, jobId) {
 function toggleResult(i) {
   const el = document.getElementById('rr_' + i);
   if (el) el.classList.toggle('open');
-}
-
-// ── TOAST ─────────────────────────────────────────────────
-let toastTimer = null;
-function showToast(msg, type = 'info') {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.className   = `toast show ${type}`;
-  if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => t.className = 'toast', 3500);
 }
 </script>
 </body>
