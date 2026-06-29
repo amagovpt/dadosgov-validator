@@ -9,18 +9,19 @@ def is_allowed_file(filename: str, allowed_extensions: set) -> bool:
     return "." in filename and filename.rsplit(".", 1)[1].lower() in allowed_extensions
 
 
-def save_upload(file: FileStorage, upload_folder: str) -> str:
+def save_upload_bytes(file_name: str, file_bytes: bytes, upload_folder: str) -> str:
     """
     Saves an uploaded file to disk with a unique name to avoid collisions.
 
     Returns the absolute path to the saved file.
     """
-    original_name = secure_filename(file.filename)
+    original_name = secure_filename(file_name)
     extension = original_name.rsplit(".", 1)[1].lower()
     unique_id = 'dataframe_' + str(uuid.uuid4().hex)
     unique_name = f"{unique_id}.{extension}"
     file_path = os.path.join(upload_folder, unique_name)
-    file.save(file_path)
+    with open(file_path, "wb") as f:
+        f.write(file_bytes)
     return unique_id, os.path.abspath(file_path)
 
 

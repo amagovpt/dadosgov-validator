@@ -10,3 +10,4 @@ logging==0.4.9.6
 flask-sqlalchemy==3.1.1
 psycopg2-binary==2.9.10
 flask-migrate==4.1.0
+requests==2.34.2

@@ -19,7 +19,7 @@ def run_validation(self, dataframe_ids: list[str], rules: list) -> dict:
 
     Args:
         dataframe_ids: A list of IDs of the dataframes to use for validation
-        rules:     List of rule dicts, e.g. [{"type": "not_null", "column": "Age"}]
+        rules:     List of rule dicts, e.g. [{"dataframe_ids": ["df1"], "type": "not_null", "column": "Age"}]
 
     Returns:
         A report dict with overall pass/fail and per-rule results
