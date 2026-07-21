@@ -8,6 +8,7 @@ class PreprocessingReport(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     dadosgov_dataset_id = db.Column(db.String(64), nullable=True, index=True)
+    dadosgov_resource_id = db.Column(db.String(64), nullable=True, index=True)
     dataframe_id = db.Column(db.String(64), nullable=False, index=True)
     job_id = db.Column(db.String(64), nullable=False, unique=True)
     status = db.Column(db.Enum(TaskStatus, native_enum=False), nullable=False, default=TaskStatus.QUEUED)

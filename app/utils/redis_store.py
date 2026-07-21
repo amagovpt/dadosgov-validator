@@ -7,6 +7,9 @@ client = redis.Redis.from_url(REDIS_URL)
 
 def save_dataframe(key: str, df):
     """Serialize and store a DataFrame in Redis."""
+    # Remove any existing entry for the key before saving the new dataframe
+    client.delete(key)
+
     client.set(key, pickle.dumps(df))
 
 def load_dataframe(key: str):

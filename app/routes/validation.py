@@ -1,6 +1,5 @@
 from flask import Blueprint, request, jsonify, current_app
 import uuid
-import json
 
 from app.tasks import validation_task 
 from app.tasks import preprocessing_tasks
@@ -10,16 +9,125 @@ from app.utils import file_handler
 from app.utils import redis_store
 from app.services import dadosgov_client
 from app.validators.descriptions import RULE_DESCRIPTIONS
+from app.models import PreprocessingReport, ValidationReport, TaskStatus, ValidationRuleset
 from app import db
 from app import celery
-from app.models import PreprocessingReport, ValidationReport, TaskStatus
 
 validation_bp = Blueprint("validation", __name__)
 
+# ============================================================
+# Endpoint for fetching available validation rules
 
 @validation_bp.route("/available_rules", methods=["GET"])
 def available_rules():
     return jsonify(RULE_DESCRIPTIONS), 200
+
+
+# ============================================================
+# Endpoints for ValidationRuleset CRUD operations
+
+@validation_bp.route("/validation_rulesets", methods=["POST"])
+def create_validation_ruleset():
+    """
+    Accepts a JSON body with:
+      - dadosgov_user_id: the dados.gov user identifier to associate the ruleset with
+      - title: the title of the ruleset
+      - description: a description of the ruleset
+      - resource_id_list: a list of resource IDs that this ruleset applies to
+      - rules: an array of rule objects, e.g. [{"dataframe_ids": ["df1"], "type": "not_null", "column": "Age"}, ...]
+    """
+    body = request.get_json(silent=False)  # raises 400 with a real error if body is bad
+    if not body:
+        return jsonify({"error": "Request body must be JSON"}), 400
+
+    dadosgov_user_id = body.get("dadosgov_user_id")
+    title = body.get("title")
+    description = body.get("description")
+    resource_id_list = body.get("resource_id_list")
+    rules = body.get("rules")
+
+    if not dadosgov_user_id or not title or not resource_id_list or not rules:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    new_ruleset = ValidationRuleset(
+        dadosgov_user_id=dadosgov_user_id,
+        title=title,
+        description=description,
+        resource_id_list=resource_id_list,
+        rules=rules
+    )
+    db.session.add(new_ruleset)
+    db.session.commit()
+
+    return jsonify({"message": "Validation ruleset created", "ruleset_id": new_ruleset.id}), 201
+
+
+@validation_bp.route("/validation_rulesets/<int:ruleset_id>", methods=["GET"])
+def get_validation_ruleset(ruleset_id):
+    ruleset = ValidationRuleset.query.get(ruleset_id)
+    if not ruleset:
+        return jsonify({"error": "Validation ruleset not found"}), 404
+
+    return jsonify({
+        "id": ruleset.id,
+        "dadosgov_user_id": ruleset.dadosgov_user_id,
+        "title": ruleset.title,
+        "description": ruleset.description,
+        "resource_id_list": ruleset.resource_id_list,
+        "rules": ruleset.rules,
+        "created_at": ruleset.created_at.isoformat(),
+        "updated_at": ruleset.updated_at.isoformat()
+    }), 200
+
+
+@validation_bp.route("/validation_rulesets/<int:dadosgov_user_id>", methods=["GET"])
+def get_validation_rulesets_by_user_id(dadosgov_user_id):
+    rulesets = ValidationRuleset.query.filter_by(dadosgov_user_id=dadosgov_user_id).all()
+    if not rulesets:
+        return jsonify({"error": "No validation rulesets found for the specified user"}), 404
+
+    return jsonify([{
+        "id": ruleset.id,
+        "dadosgov_user_id": ruleset.dadosgov_user_id,
+        "title": ruleset.title,
+        "description": ruleset.description,
+        "resource_id_list": ruleset.resource_id_list,
+        "rules": ruleset.rules,
+        "created_at": ruleset.created_at.isoformat(),
+        "updated_at": ruleset.updated_at.isoformat()
+    } for ruleset in rulesets]), 200
+
+
+@validation_bp.route("/validation_rulesets/<int:ruleset_id>", methods=["PUT"])
+def update_validation_ruleset(ruleset_id):
+    ruleset = ValidationRuleset.query.get(ruleset_id)
+    if not ruleset:
+        return jsonify({"error": "Validation ruleset not found"}), 404
+
+    body = request.get_json(silent=False)  # raises 400 with a real error if body is bad
+    if not body:
+        return jsonify({"error": "Request body must be JSON"}), 400
+
+    ruleset.title = body.get("title", ruleset.title)
+    ruleset.description = body.get("description", ruleset.description)
+    ruleset.resource_id_list = body.get("resource_id_list", ruleset.resource_id_list)
+    ruleset.rules = body.get("rules", ruleset.rules)
+
+    db.session.commit()
+
+    return jsonify({"message": "Validation ruleset updated"}), 200
+
+
+@validation_bp.route("/validation_rulesets/<int:ruleset_id>", methods=["DELETE"])
+def delete_validation_ruleset(ruleset_id):
+    ruleset = ValidationRuleset.query.get(ruleset_id)
+    if not ruleset:
+        return jsonify({"error": "Validation ruleset not found"}), 404
+
+    db.session.delete(ruleset)
+    db.session.commit()
+
+    return jsonify({"message": "Validation ruleset deleted"}), 200
 
 
 # ============================================================
@@ -97,15 +205,19 @@ def preprocess_file_from_url():
     Accepts a JSON body with:
       - file_url: the URL of the file to fetch and preprocess
       - dadosgov_dataset_id: the dados.gov dataset identifier
+      - dadosgov_resource_id: the dados.gov resource identifier
     """
     body = request.get_json(silent=True) or {}
     file_url = body.get("file_url")
     dadosgov_dataset_id = body.get("dadosgov_dataset_id")
+    dadosgov_resource_id = body.get("dadosgov_resource_id")
 
     if not file_url:
         return jsonify({"error": "No file_url provided"}), 400
     if not dadosgov_dataset_id:
         return jsonify({"error": "No dadosgov_dataset_id provided"}), 400
+    if not dadosgov_resource_id:
+        return jsonify({"error": "No dadosgov_resource_id provided"}), 400
 
     file_name = file_url.split("/")[-1]
     if not file_handler.is_allowed_file(file_name, current_app.config["ALLOWED_EXTENSIONS"]):
@@ -113,17 +225,27 @@ def preprocess_file_from_url():
 
     file_bytes = dadosgov_client.fetch_resource_file(file_url)
 
-    return _dispatch_preprocessing(file_name, file_bytes, dadosgov_dataset_id)
+    return _dispatch_preprocessing(file_name, file_bytes, dadosgov_dataset_id, dadosgov_resource_id)
 
 
-def _dispatch_preprocessing(file_name: str, file_bytes: bytes, dadosgov_dataset_id: str = None):
-    dataframe_id, file_path = file_handler.save_upload_bytes(file_name, file_bytes, current_app.config["UPLOAD_FOLDER"])
+def _dispatch_preprocessing(file_name: str, file_bytes: bytes, dadosgov_dataset_id: str = None, dadosgov_resource_id: str = None):
+    if dadosgov_resource_id:
+        """
+        This is done to avoid a mismatch between the resource ID and the dataframe ID, as the same resource may need to be 
+        reprocessed when loading stored rules, and in this case the stored dataframe ID will match the resource ID.
+        """
+        unique_id = 'dataframe_' + dadosgov_dataset_id + '_' + dadosgov_resource_id
+    else:
+        unique_id = 'dataframe_' + str(uuid.uuid4().hex)
+
+    dataframe_id, file_path = file_handler.save_upload_bytes(file_name, file_bytes, unique_id, current_app.config["UPLOAD_FOLDER"])
 
     task = preprocessing_tasks.preprocess_dataset.s(file_path, dataframe_id)
     task.set(task_id=str(uuid.uuid4()))
 
     report = PreprocessingReport(
         dadosgov_dataset_id=dadosgov_dataset_id,
+        dadosgov_resource_id=dadosgov_resource_id,
         dataframe_id=dataframe_id,
         job_id=task.id,
         status=TaskStatus.QUEUED,
@@ -131,6 +253,7 @@ def _dispatch_preprocessing(file_name: str, file_bytes: bytes, dadosgov_dataset_
     )
     db.session.add(report)
     db.session.commit()
+
     task.delay()
 
     return jsonify({
