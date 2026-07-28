@@ -22,12 +22,13 @@ class DadosGovAPIError(Exception):
     pass
 
 
-def fetch_datasets_for_user(user_id: str) -> list[dict]:
+def fetch_datasets_for_user(user_id: str, api_key: str = None) -> list[dict]:
     """
     Fetches the list of datasets associated with a given user from the dados.gov API.
 
     Args:
         user_id: The dados.gov user identifier to fetch datasets for.
+        api_key: The API key to authenticate the request.
 
     Returns:
         A list of dataset dicts, each shaped like:
@@ -45,9 +46,19 @@ def fetch_datasets_for_user(user_id: str) -> list[dict]:
     req_params = {
         "owner": user_id
     }
+    headers = {
+        "accept": "application/json",
+    }
+    if api_key is not None:
+        headers["X-API-KEY"] = api_key
 
     try:
-        response = requests.get(url, params=req_params, timeout=DADOSGOV_API_TIMEOUT_SECONDS)
+        response = requests.get(
+            url,
+            params=req_params,
+            headers=headers,
+            timeout=DADOSGOV_API_TIMEOUT_SECONDS,
+        )
         response.raise_for_status()
     except requests.exceptions.Timeout as e:
         raise DadosGovAPIError(f"Tempo limite excedido ao contactar a API do dados.gov: {e}")
@@ -104,15 +115,21 @@ def _parse_datasets_response(raw_data) -> list[dict]:
     return datasets
 
 
-def fetch_resource_file(resource_url: str) -> bytes:
+def fetch_resource_file(resource_url: str, api_key: str = None) -> bytes:
     """
     Fetches the content of a resource file from the dados.gov API.
 
     Args:
         resource_url: The URL of the resource file to fetch.
+        api_key: The API key to authenticate the request.
     """
     try:
-        response = requests.get(resource_url, timeout=DADOSGOV_API_TIMEOUT_SECONDS, verify=False)
+        if api_key is not None:
+            headers = { "X-API-KEY": api_key }
+            response = requests.get(resource_url, headers=headers, timeout=DADOSGOV_API_TIMEOUT_SECONDS, verify=False)
+        else:
+            response = requests.get(resource_url, timeout=DADOSGOV_API_TIMEOUT_SECONDS, verify=False)
+
         response.raise_for_status()
     except requests.exceptions.Timeout as e:
         raise DadosGovAPIError(f"Tempo limite excedido ao baixar o recurso: {e}")
