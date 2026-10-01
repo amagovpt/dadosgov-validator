@@ -26,34 +26,37 @@ def available_rules():
 # ============================================================
 # Endpoints for ValidationRuleset CRUD operations
 
-@validation_bp.route("/validation_rulesets", methods=["POST"])
+@validation_bp.route("/validation_rulesets/create", methods=["POST"])
 def create_validation_ruleset():
     """
     Accepts a JSON body with:
-      - dadosgov_user_id: the dados.gov user identifier to associate the ruleset with
+      - dadosgov_organization_id: the dados.gov organization identifier to associate the ruleset with
       - title: the title of the ruleset
       - description: a description of the ruleset
-      - resource_id_list: a list of resource IDs that this ruleset applies to
+      - dadosgov_dataset_id: the dados.gov dataset identifier that this ruleset applies to
+      - dadosgov_resource_id_list: a list of resource IDs that this ruleset applies to
       - rules: an array of rule objects, e.g. [{"dataframe_ids": ["df1"], "type": "not_null", "column": "Age"}, ...]
     """
     body = request.get_json(silent=False)  # raises 400 with a real error if body is bad
     if not body:
         return jsonify({"error": "Request body must be JSON"}), 400
 
-    dadosgov_user_id = body.get("dadosgov_user_id")
+    dadosgov_organization_id = body.get("dadosgov_organization_id")
     title = body.get("title")
     description = body.get("description")
-    resource_id_list = body.get("resource_id_list")
+    dadosgov_dataset_id = body.get("dadosgov_dataset_id")
+    dadosgov_resource_id_list = body.get("dadosgov_resource_id_list")
     rules = body.get("rules")
 
-    if not dadosgov_user_id or not title or not resource_id_list or not rules:
+    if not dadosgov_organization_id or not title or not dadosgov_resource_id_list or not rules:
         return jsonify({"error": "Missing required fields"}), 400
 
     new_ruleset = ValidationRuleset(
-        dadosgov_user_id=dadosgov_user_id,
+        dadosgov_organization_id=dadosgov_organization_id,
         title=title,
         description=description,
-        resource_id_list=resource_id_list,
+        dadosgov_dataset_id=dadosgov_dataset_id,
+        dadosgov_resource_id_list=dadosgov_resource_id_list,
         rules=rules
     )
     db.session.add(new_ruleset)
@@ -62,7 +65,7 @@ def create_validation_ruleset():
     return jsonify({"message": "Validation ruleset created", "ruleset_id": new_ruleset.id}), 201
 
 
-@validation_bp.route("/validation_rulesets/<int:ruleset_id>", methods=["GET"])
+@validation_bp.route("/validation_rulesets/get_by_ruleset_id/<int:ruleset_id>", methods=["GET"])
 def get_validation_ruleset(ruleset_id):
     ruleset = ValidationRuleset.query.get(ruleset_id)
     if not ruleset:
@@ -70,35 +73,37 @@ def get_validation_ruleset(ruleset_id):
 
     return jsonify({
         "id": ruleset.id,
-        "dadosgov_user_id": ruleset.dadosgov_user_id,
+        "dadosgov_organization_id": ruleset.dadosgov_organization_id,
         "title": ruleset.title,
         "description": ruleset.description,
-        "resource_id_list": ruleset.resource_id_list,
+        "dadosgov_dataset_id": ruleset.dadosgov_dataset_id,
+        "dadosgov_resource_id_list": ruleset.dadosgov_resource_id_list,
         "rules": ruleset.rules,
         "created_at": ruleset.created_at.isoformat(),
         "updated_at": ruleset.updated_at.isoformat()
     }), 200
 
 
-@validation_bp.route("/validation_rulesets/<int:dadosgov_user_id>", methods=["GET"])
-def get_validation_rulesets_by_user_id(dadosgov_user_id):
-    rulesets = ValidationRuleset.query.filter_by(dadosgov_user_id=dadosgov_user_id).all()
+@validation_bp.route("/validation_rulesets/get_by_dadosgov_organization_id/<int:dadosgov_organization_id>", methods=["GET"])
+def get_validation_rulesets_by_organization_id(dadosgov_organization_id):
+    rulesets = ValidationRuleset.query.filter_by(dadosgov_organization_id=dadosgov_organization_id).all()
     if not rulesets:
-        return jsonify({"error": "No validation rulesets found for the specified user"}), 404
+        return jsonify({"error": "No validation rulesets found for the specified organization"}), 404
 
     return jsonify([{
         "id": ruleset.id,
-        "dadosgov_user_id": ruleset.dadosgov_user_id,
+        "dadosgov_organization_id": ruleset.dadosgov_organization_id,
         "title": ruleset.title,
         "description": ruleset.description,
-        "resource_id_list": ruleset.resource_id_list,
+        "dadosgov_dataset_id": ruleset.dadosgov_dataset_id,
+        "dadosgov_resource_id_list": ruleset.dadosgov_resource_id_list,
         "rules": ruleset.rules,
         "created_at": ruleset.created_at.isoformat(),
         "updated_at": ruleset.updated_at.isoformat()
     } for ruleset in rulesets]), 200
 
 
-@validation_bp.route("/validation_rulesets/<int:ruleset_id>", methods=["PUT"])
+@validation_bp.route("/validation_rulesets/update/<int:ruleset_id>", methods=["PUT"])
 def update_validation_ruleset(ruleset_id):
     ruleset = ValidationRuleset.query.get(ruleset_id)
     if not ruleset:
@@ -110,7 +115,8 @@ def update_validation_ruleset(ruleset_id):
 
     ruleset.title = body.get("title", ruleset.title)
     ruleset.description = body.get("description", ruleset.description)
-    ruleset.resource_id_list = body.get("resource_id_list", ruleset.resource_id_list)
+    ruleset.dadosgov_dataset_id = body.get("dadosgov_dataset_id", ruleset.dadosgov_dataset_id)
+    ruleset.dadosgov_resource_id_list = body.get("dadosgov_resource_id_list", ruleset.dadosgov_resource_id_list)
     ruleset.rules = body.get("rules", ruleset.rules)
 
     db.session.commit()
@@ -118,7 +124,7 @@ def update_validation_ruleset(ruleset_id):
     return jsonify({"message": "Validation ruleset updated"}), 200
 
 
-@validation_bp.route("/validation_rulesets/<int:ruleset_id>", methods=["DELETE"])
+@validation_bp.route("/validation_rulesets/delete/<int:ruleset_id>", methods=["DELETE"])
 def delete_validation_ruleset(ruleset_id):
     ruleset = ValidationRuleset.query.get(ruleset_id)
     if not ruleset:
