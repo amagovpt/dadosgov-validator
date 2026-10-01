@@ -13,8 +13,8 @@ RULE FORMAT:
 Each rule is a dict with at minimum a "type" key.
 Additional keys depend on the rule type. Examples:
 
-    {"dataframe_ids": ["df1"], "type": "not_null",   "column": "Age"}
-    {"dataframe_ids": ["df1"], "type": "min_value",  "column": "Score",  "value": 0}
+    {"dataframe_ids": ["df1"], "type": "test_not_null",   "column": "Age"}
+    {"dataframe_ids": ["df1"], "type": "test_length_max",  "column": "Score",  "value": 10}
 """
 
 import pandas as pd
@@ -65,21 +65,30 @@ def run_rules(df_store: dict[str, pd.DataFrame], rules: list) -> dict:
     Returns a report dict:
     {
         "total_rules": 3,
-        "passed": 2,
-        "failed": 1,
+        "passed": 1,
+        "failed": 2,
         "results": [
-            {"rule": {...}, "passed": True,  "failures": []},
-            {"rule": {...}, "passed": False, "failures": [
+            {"rule": {...}, "passed": True,  "warning_only": False, "failures": []},
+            {"rule": {...}, "passed": False, "warning_only": False, "failures": [
                 {"column": "NomeColuna", "message": "Lorem ipsum dolor sit", "row": 4, "value": -1},
                 {"column": "NomeColuna", "message": "Lorem ipsum dolor sit", "row": 7, "value": -4},
                 ...
             ]},
             ...
-        ]
+        ],
+        "internal_errors": [
+            {"rule": {...}, "passed": False, "warning_only": False, "error": "..."}
+        ],
+        "execution_time_seconds": 0.12
     }
+
+    "results" holds one entry per rule that ran to completion; "internal_errors"
+    holds rules that raised. Rules in "internal_errors" are never counted as
+    passed, so "failed" (total - passed) includes them.
     """
     start_time = time.time()
-    results = []
+    rule_results = []
+    internal_errors = []
 
     for rule in rules:
         rule_type = rule.get("type")
@@ -92,27 +101,33 @@ def run_rules(df_store: dict[str, pd.DataFrame], rules: list) -> dict:
             raise ValueError(f"Rule of type {rule_type} is missing 'dataframe_ids' key or it is empty.")
         rule_df_list = [df_store[df_id] for df_id in rule_dataframe_ids]
 
+        # if a rule is marked as "warning_only", it will not count as a failure in the overall report, but will still be included in the results
+        warning_only = rule.get("warning_only", False)
+
         try:
             failures = validator_fn(rule_df_list, rule)
-            results.append({
+            rule_results.append({
                 "rule": rule,
                 "passed": len(failures) == 0,
+                "warning_only": warning_only,
                 "failures": [f.to_dict() for f in failures]
             })
         except Exception as e:
-            results.append({
+            internal_errors.append({
                 "rule": rule,
                 "passed": False,
+                "warning_only": warning_only,
                 "error": str(e)
             })
 
-    passed_count = sum(1 for r in results if r.get("passed"))
+    passed_count = sum(1 for r in rule_results if r.get("passed")) # does not include technical errors as those are always a failure
     end_time = time.time()
 
     return {
         "total_rules": len(rules),
         "passed": passed_count,
         "failed": len(rules) - passed_count,
-        "results": results,
+        "results": rule_results,
+        "internal_errors": internal_errors,
         "execution_time_seconds": round(end_time - start_time, 2)
     }
