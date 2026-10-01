@@ -1,2 +1,18 @@
-test.ipynb
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+venv/
+.venv/
+
+# Ambiente e dados locais
 .env
+test.ipynb
+/prototypes
+
+# Windows/WSL: Alternate Data Streams (Mark of the Web)
+*:Zone.Identifier
+
+# Arquivos de transferencia do projeto
+*.zip
